@@ -19,7 +19,7 @@ function buildAssetName(version, packageType) {
 
 const DEFAULT_MANIFEST_URL = process.env.MORPHLY_UPDATE_MANIFEST_URL
   || process.env.VITE_UPDATE_MANIFEST_URL
-  || 'https://morphly-alpha.vercel.app/api/version';
+  || 'https://surevideotool-project.vercel.app/api/version';
 
 function safeStringify(value) {
   try {

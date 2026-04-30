@@ -5,7 +5,7 @@
 2. [x] Test local development (run `cd app && npm run dev` manually - note Windows PS uses ; instead of &&)
 3. [x] Reviewed duplicate API routes (identical, no merge needed for now)
 4. [ ] Redeploy to Vercel: cd app && vercel --prod
-5. [ ] Verify production /api/rate endpoint works (curl https://morphly-alpha.vercel.app/api/rate)
+5. [ ] Verify production /api/rate endpoint works (curl https://surevideotool-project.vercel.app/api/rate)
 6. [ ] [Complete] Task done
 
 ## Next manual steps:

@@ -673,7 +673,7 @@ function loadEnvironmentVariables() {
 function resolveUpdateManifestUrl() {
   return process.env.MORPHLY_UPDATE_MANIFEST_URL
     || process.env.VITE_UPDATE_MANIFEST_URL
-    || 'https://morphly-alpha.vercel.app/api/version';
+    || 'https://surevideotool-project.vercel.app/api/version';
 }
 
 function resolveRendererDevUrl() {
