@@ -1,0 +1,166 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: app/package-lock.json
+
+    - name: Configure native Morphly camera build
+      shell: pwsh
+      run: cmake -S native-camera -B native-camera/build -A x64
+
+    - name: Build native Morphly camera artifacts
+      shell: pwsh
+      run: cmake --build native-camera/build --config Release
+
+    - name: Install dependencies
+      working-directory: app
+      run: npm ci
+
+    - name: Prepare release env
+      working-directory: app
+      shell: pwsh
+      env:
+        VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+        VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+        VITE_FLUTTERWAVE_PUBLIC_KEY: ${{ secrets.VITE_FLUTTERWAVE_PUBLIC_KEY || vars.VITE_FLUTTERWAVE_PUBLIC_KEY || secrets.VITE_FLW_PUBLIC_KEY || vars.VITE_FLW_PUBLIC_KEY || secrets.FLUTTERWAVE_PUBLIC_KEY || vars.FLUTTERWAVE_PUBLIC_KEY || secrets.FLW_PUBLIC_KEY || vars.FLW_PUBLIC_KEY }}
+        FLUTTERWAVE_SECRET_KEY: ${{ secrets.FLUTTERWAVE_SECRET_KEY || vars.FLUTTERWAVE_SECRET_KEY || secrets.FLW_SECRET_KEY || vars.FLW_SECRET_KEY }}
+        FLUTTERWAVE_WEBHOOK_SECRET_HASH: ${{ secrets.FLUTTERWAVE_WEBHOOK_SECRET_HASH || vars.FLUTTERWAVE_WEBHOOK_SECRET_HASH || secrets.FLW_SECRET_HASH || vars.FLW_SECRET_HASH }}
+        SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL || vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+        SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY || vars.SUPABASE_SERVICE_KEY || vars.SUPABASE_SERVICE_ROLE_KEY }}
+        DECART_API_KEY: ${{ secrets.DECART_API_KEY || vars.DECART_API_KEY }}
+      run: |
+        $required = @{
+          VITE_FLUTTERWAVE_PUBLIC_KEY = $env:VITE_FLUTTERWAVE_PUBLIC_KEY
+          FLUTTERWAVE_SECRET_KEY = $env:FLUTTERWAVE_SECRET_KEY
+        }
+
+        $missing = $required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object { $_.Key }
+        if ($missing.Count -gt 0) {
+          throw "Missing release environment values: $($missing -join ', '). Configure repo/org Secrets or Variables for one of these aliases: VITE_FLUTTERWAVE_PUBLIC_KEY|VITE_FLW_PUBLIC_KEY|FLUTTERWAVE_PUBLIC_KEY|FLW_PUBLIC_KEY and FLUTTERWAVE_SECRET_KEY|FLW_SECRET_KEY."
+        }
+
+        $optional = @{
+          VITE_SUPABASE_URL = $env:VITE_SUPABASE_URL
+          VITE_SUPABASE_ANON_KEY = $env:VITE_SUPABASE_ANON_KEY
+          SUPABASE_URL = $env:SUPABASE_URL
+          SUPABASE_SERVICE_KEY = $env:SUPABASE_SERVICE_KEY
+          FLUTTERWAVE_WEBHOOK_SECRET_HASH = $env:FLUTTERWAVE_WEBHOOK_SECRET_HASH
+          DECART_API_KEY = $env:DECART_API_KEY
+        }
+
+        $missingOptional = $optional.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object { $_.Key }
+        if ($missingOptional.Count -gt 0) {
+          Write-Host "Continuing without optional release env values: $($missingOptional -join ', ')"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($env:VITE_API_URL)) {
+          $env:VITE_API_URL = "/api"
+        }
+
+        @(
+          "VITE_SUPABASE_URL=$env:VITE_SUPABASE_URL"
+          "VITE_SUPABASE_ANON_KEY=$env:VITE_SUPABASE_ANON_KEY"
+          "SUPABASE_URL=$env:SUPABASE_URL"
+          "SUPABASE_SERVICE_KEY=$env:SUPABASE_SERVICE_KEY"
+          "VITE_API_URL=$env:VITE_API_URL"
+          "VITE_FLUTTERWAVE_PUBLIC_KEY=$env:VITE_FLUTTERWAVE_PUBLIC_KEY"
+          "FLUTTERWAVE_SECRET_KEY=$env:FLUTTERWAVE_SECRET_KEY"
+          "FLUTTERWAVE_WEBHOOK_SECRET_HASH=$env:FLUTTERWAVE_WEBHOOK_SECRET_HASH"
+          "DECART_API_KEY=$env:DECART_API_KEY"
+        ) | Set-Content -Path .env -Encoding ascii
+
+    - name: Build Electron app
+      working-directory: app
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        MORPHLY_NATIVE_BUILD_DIR: ../native-camera/build
+        VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+        VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+        VITE_FLUTTERWAVE_PUBLIC_KEY: ${{ secrets.VITE_FLUTTERWAVE_PUBLIC_KEY || vars.VITE_FLUTTERWAVE_PUBLIC_KEY || secrets.VITE_FLW_PUBLIC_KEY || vars.VITE_FLW_PUBLIC_KEY || secrets.FLUTTERWAVE_PUBLIC_KEY || vars.FLUTTERWAVE_PUBLIC_KEY || secrets.FLW_PUBLIC_KEY || vars.FLW_PUBLIC_KEY }}
+      run: npm run electron:release
+
+    - name: Resolve release version
+      id: release-version
+      working-directory: app
+      shell: pwsh
+      run: |
+        $packageVersion = (Get-Content package.json | ConvertFrom-Json).version
+
+        if ("${{ github.ref_type }}" -eq "tag") {
+          $tagName = "${{ github.ref_name }}"
+          $tagVersion = $tagName.TrimStart('v')
+
+          if ($tagVersion -ne $packageVersion) {
+            throw "Tag $tagName does not match app/package.json version $packageVersion. Update the app version before creating the tag."
+          }
+
+          $version = $tagVersion
+        } else {
+          $version = $packageVersion
+          $tagName = "v$packageVersion"
+        }
+
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "TAG_NAME=$tagName" >> $env:GITHUB_OUTPUT
+
+    - name: Verify release artifacts
+      shell: pwsh
+      run: |
+        $version = "${{ steps.release-version.outputs.VERSION }}"
+        $dir = "app/release"
+
+        if (!(Test-Path $dir)) { throw "Missing output directory: $dir" }
+
+        $blockmaps = Get-ChildItem -Path $dir -Filter "*.blockmap" -ErrorAction SilentlyContinue
+        if (!$blockmaps) { throw "Missing .blockmap files in $dir" }
+
+        $installerCandidates = @(
+          (Join-Path $dir "Morphly-Setup-$version.exe"),
+          (Join-Path $dir "Morphly Setup $version.exe")
+        )
+        $portableCandidates = @(
+          (Join-Path $dir "Morphly-$version.exe"),
+          (Join-Path $dir "Morphly $version.exe")
+        )
+
+        $exe1 = $installerCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+        $exe2 = $portableCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        if (!$exe1) { throw "Missing installer. Checked: $($installerCandidates -join ', ')" }
+        if (!$exe2) { throw "Missing portable build. Checked: $($portableCandidates -join ', ')" }
+
+        $bundledCameraDir = Join-Path $dir "win-unpacked/resources/morphly-cam"
+        if (!(Test-Path $bundledCameraDir)) { throw "Missing bundled camera directory: $bundledCameraDir" }
+
+        $expectedArtifacts = @(
+          "MorphlyVirtualCamera.dll",
+          "morphly_cam_registrar.exe",
+          "morphly_cam_pipe_publisher.exe"
+        )
+
+        foreach ($artifact in $expectedArtifacts) {
+          $artifactPath = Join-Path $bundledCameraDir $artifact
+          if (!(Test-Path $artifactPath)) { throw "Missing bundled camera artifact: $artifactPath" }
+        }

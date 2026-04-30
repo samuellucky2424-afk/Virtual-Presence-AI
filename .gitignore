@@ -1,0 +1,46 @@
+node_modules/
+.env
+.env.local
+app/.env
+app/.env.local
+.DS_Store
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+release/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.snap
+
+# Electron build artifacts
+app/release/
+.push-fix/app/release/
+app/.cache/
+native-camera/build/
+
+# Debug / probe artifacts from development
+.edge-probe-profile/
+logs/
+*.png
+probe-dom.txt
+edge-targets.json
+browser-probe-live.png
+plain-shot.png
+probe-shot.png
+check_bridge_objects.ps1
+inspect_probe_cdp.ps1
+test_mapping.ps1
+test_shmem.ps1
+app/public/camera-probe.html
+scripts/monitor-morphly.ps1
+
+# IDE
+.vscode/*.log
