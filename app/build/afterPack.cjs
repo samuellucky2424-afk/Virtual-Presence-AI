@@ -2,10 +2,10 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const NATIVE_ARTIFACTS = [
-  'morphly_cam_pipe_publisher.exe',
-  'morphly_cam_registrar.exe',
-  'MorphlyVirtualCamera.dll',
-  'MorphlyVirtualCameraMF.dll'
+  'surevideotool_cam_pipe_publisher.exe',
+  'surevideotool_cam_registrar.exe',
+  'SurevideotoolVirtualCamera.dll',
+  'SurevideotoolVirtualCameraMF.dll'
 ];
 
 const BUILD_CONFIGS = [
@@ -17,8 +17,8 @@ const BUILD_CONFIGS = [
 function getNativeBuildRoots(appDir) {
   const roots = [];
 
-  if (process.env.MORPHLY_NATIVE_BUILD_DIR) {
-    roots.push(path.resolve(appDir, process.env.MORPHLY_NATIVE_BUILD_DIR));
+  if (process.env.SUREVIDEOTOOL_NATIVE_BUILD_DIR) {
+    roots.push(path.resolve(appDir, process.env.SUREVIDEOTOOL_NATIVE_BUILD_DIR));
   }
 
   roots.push(path.resolve(appDir, '..', 'native-camera', 'build'));
@@ -70,15 +70,15 @@ async function resolveNativeArtifacts(appDir) {
   }
 
   throw new Error(
-    `Unable to locate native Morphly camera artifacts in any of: ${nativeBuildRoots.join(', ')}. ` +
-      `Build MorphlyCam first so ${NATIVE_ARTIFACTS.join(', ')} exist in a build output directory.`
+    `Unable to locate native Surevideotool camera artifacts in any of: ${nativeBuildRoots.join(', ')}. ` +
+      `Build SurevideotoolCam first so ${NATIVE_ARTIFACTS.join(', ')} exist in a build output directory.`
   );
 }
 
 module.exports = async function afterPack(context) {
   const appDirectory = context.packager?.info?.appDir ?? context.packager?.projectDir ?? process.cwd();
   const { buildConfig, resolvedArtifacts } = await resolveNativeArtifacts(appDirectory);
-  const destinationDirectory = path.join(context.appOutDir, 'resources', 'morphly-cam');
+  const destinationDirectory = path.join(context.appOutDir, 'resources', 'surevideotool-cam');
 
   await fs.mkdir(destinationDirectory, { recursive: true });
 
@@ -89,6 +89,6 @@ module.exports = async function afterPack(context) {
   );
 
   console.log(
-    `[afterPack] Bundled Morphly camera artifacts from ${buildConfig} into ${destinationDirectory}`
+    `[afterPack] Bundled Surevideotool camera artifacts from ${buildConfig} into ${destinationDirectory}`
   );
 };

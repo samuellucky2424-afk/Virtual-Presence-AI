@@ -8,7 +8,7 @@
 #include <iostream>
 #include <vector>
 
-#include "morphly/morphly_publisher.h"
+#include "surevideotool/surevideotool_publisher.h"
 
 namespace
 {
@@ -52,7 +52,7 @@ namespace
         return static_cast<size_t>(input->gcount()) == byteCount;
     }
 
-    bool NeedsReopen(const morphly::PublisherConfig& currentConfig, const morphly::PublisherConfig& nextConfig, bool isOpen)
+    bool NeedsReopen(const surevideotool::PublisherConfig& currentConfig, const surevideotool::PublisherConfig& nextConfig, bool isOpen)
     {
         return !isOpen
             || currentConfig.width != nextConfig.width
@@ -107,8 +107,8 @@ int wmain()
         return 1;
     }
 
-    morphly::Publisher publisher;
-    morphly::PublisherConfig currentConfig{};
+    surevideotool::Publisher publisher;
+    surevideotool::PublisherConfig currentConfig{};
     bool isOpen = false;
     bool waitingForBridge = false;
     std::vector<uint8_t> frameBytes;
@@ -136,7 +136,7 @@ int wmain()
             return 1;
         }
 
-        morphly::PublisherConfig nextConfig{};
+        surevideotool::PublisherConfig nextConfig{};
         nextConfig.width = header.width;
         nextConfig.height = header.height;
         nextConfig.stride = header.stride;
@@ -162,14 +162,14 @@ int wmain()
                 {
                     if (!waitingForBridge)
                     {
-                        std::cerr << "Waiting for the Morphly virtual camera bridge to become available.\n";
+                        std::cerr << "Waiting for the Surevideotool virtual camera bridge to become available.\n";
                         waitingForBridge = true;
                     }
 
                     continue;
                 }
 
-                std::cerr << "Failed to open Morphly publisher. HRESULT=0x" << std::hex << static_cast<unsigned long>(openHr) << "\n";
+                std::cerr << "Failed to open Surevideotool publisher. HRESULT=0x" << std::hex << static_cast<unsigned long>(openHr) << "\n";
                 return 1;
             }
 
@@ -178,7 +178,7 @@ int wmain()
 
             if (waitingForBridge)
             {
-                std::cerr << "Morphly virtual camera bridge connected.\n";
+                std::cerr << "Surevideotool virtual camera bridge connected.\n";
                 waitingForBridge = false;
             }
         }

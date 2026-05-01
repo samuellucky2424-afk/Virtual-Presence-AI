@@ -6,7 +6,7 @@
 
 #include "mf_virtual_camera_source.h"
 
-#include "morphly/morphly_ids.h"
+#include "surevideotool/surevideotool_ids.h"
 
 namespace
 {
@@ -34,7 +34,7 @@ namespace
         }
 
         wchar_t value[64]{};
-        if (StringFromGUID2(morphly::kWindowsVirtualCameraSourceClsid, value, ARRAYSIZE(value)) == 0)
+        if (StringFromGUID2(surevideotool::kWindowsVirtualCameraSourceClsid, value, ARRAYSIZE(value)) == 0)
         {
             return E_FAIL;
         }
@@ -89,7 +89,7 @@ namespace
 
         const auto closeClassKey = [&]() noexcept { RegCloseKey(classKey); };
 
-        HRESULT hr = SetRegistryString(classKey, nullptr, morphly::kVirtualCameraFriendlyName);
+        HRESULT hr = SetRegistryString(classKey, nullptr, surevideotool::kVirtualCameraFriendlyName);
         if (FAILED(hr))
         {
             closeClassKey();
@@ -179,12 +179,12 @@ namespace
 
 STDAPI DllCanUnloadNow()
 {
-    return morphly::virtualcam::CanUnloadMfModule() ? S_OK : S_FALSE;
+    return surevideotool::virtualcam::CanUnloadMfModule() ? S_OK : S_FALSE;
 }
 
 STDAPI DllGetClassObject(REFCLSID classId, REFIID interfaceId, void** object)
 {
-    return morphly::virtualcam::CreateMfClassFactory(classId, interfaceId, object);
+    return surevideotool::virtualcam::CreateMfClassFactory(classId, interfaceId, object);
 }
 
 STDAPI DllRegisterServer()

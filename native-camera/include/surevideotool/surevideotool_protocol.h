@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace morphly
+namespace surevideotool
 {
     inline constexpr uint32_t kProtocolMagic = 0x4d43414d;
     inline constexpr uint32_t kProtocolVersion = 1;

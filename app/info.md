@@ -35,12 +35,12 @@ Packaging:
   npm run electron:build:dir  Builds the unpacked Windows app for packaging smoke tests.
 
 Native camera prerequisite:
-  Build the native MorphlyCam project first so ../../build/{Debug|Release} contains:
-  - MorphlyVirtualCamera.dll
-  - morphly_cam_registrar.exe
-  - morphly_cam_pipe_publisher.exe
+  Build the native SurevideotoolCam project first so ../../build/{Debug|Release} contains:
+  - SurevideotoolVirtualCamera.dll
+  - surevideotool_cam_registrar.exe
+  - surevideotool_cam_pipe_publisher.exe
 
 Release outputs:
   release/Morphly Setup 1.2.33.exe
   release/Morphly 1.2.33.exe
-  release/win-unpacked/resources/morphly-cam/
+  release/win-unpacked/resources/surevideotool-cam/

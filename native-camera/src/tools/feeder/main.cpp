@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "morphly/morphly_publisher.h"
+#include "surevideotool/surevideotool_publisher.h"
 
 namespace
 {
@@ -41,7 +41,7 @@ namespace
         return static_cast<int64_t>(value.QuadPart);
     }
 
-    void FillFrame(const morphly::PublisherConfig& config, uint64_t frameIndex, std::vector<uint8_t>* frame)
+    void FillFrame(const surevideotool::PublisherConfig& config, uint64_t frameIndex, std::vector<uint8_t>* frame)
     {
         frame->resize(static_cast<size_t>(config.stride) * config.height);
 
@@ -63,13 +63,13 @@ namespace
     {
         std::wcout
             << L"Usage:\n"
-            << L"  morphly_cam_feeder [--seconds N] [--width N] [--height N] [--fps N]\n";
+            << L"  surevideotool_cam_feeder [--seconds N] [--width N] [--height N] [--fps N]\n";
     }
 }
 
 int wmain(int argc, wchar_t** argv)
 {
-    morphly::PublisherConfig config;
+    surevideotool::PublisherConfig config;
     uint32_t runtimeSeconds = 0;
 
     for (int index = 1; index < argc; ++index)
@@ -106,7 +106,7 @@ int wmain(int argc, wchar_t** argv)
         return 1;
     }
 
-    morphly::Publisher publisher;
+    surevideotool::Publisher publisher;
     const HRESULT openHr = publisher.Open(config);
     if (FAILED(openHr))
     {
@@ -122,7 +122,7 @@ int wmain(int argc, wchar_t** argv)
     const auto startedAt = std::chrono::steady_clock::now();
     auto nextFrameTime = startedAt;
 
-    std::wcout << L"Publishing frames to Morphly Cam. Press Ctrl+C to stop.\n";
+    std::wcout << L"Publishing frames to Surevideotool. Press Ctrl+C to stop.\n";
 
     while (g_running)
     {

@@ -16,10 +16,10 @@
 #include <strsafe.h>
 #include <windows.h>
 
-#include "morphly/morphly_ids.h"
-#include "morphly/morphly_protocol.h"
+#include "surevideotool/surevideotool_ids.h"
+#include "surevideotool/surevideotool_protocol.h"
 
-namespace morphly::virtualcam
+namespace surevideotool::virtualcam
 {
     namespace
     {
@@ -62,7 +62,7 @@ namespace morphly::virtualcam
             }
 
             wchar_t line[256]{};
-            if (SUCCEEDED(StringCchPrintfW(line, ARRAYSIZE(line), L"[Morphly G1] %s\r\n", message)))
+            if (SUCCEEDED(StringCchPrintfW(line, ARRAYSIZE(line), L"[Surevideotool] %s\r\n", message)))
             {
                 OutputDebugStringW(line);
             }
@@ -808,14 +808,14 @@ namespace morphly::virtualcam
         capabilities->MaxBitsPerSecond = capabilities->MinBitsPerSecond;
     }
 
-    CUnknown* WINAPI MorphlyG1Filter::CreateInstance(LPUNKNOWN outerUnknown, HRESULT* result)
+    CUnknown* WINAPI SurevideotoolFilter::CreateInstance(LPUNKNOWN outerUnknown, HRESULT* result)
     {
         if (result != nullptr)
         {
             *result = S_OK;
         }
 
-        MorphlyG1Filter* filter = new MorphlyG1Filter(outerUnknown, result);
+        SurevideotoolFilter* filter = new SurevideotoolFilter(outerUnknown, result);
         if (filter == nullptr && result != nullptr)
         {
             *result = E_OUTOFMEMORY;
@@ -824,10 +824,10 @@ namespace morphly::virtualcam
         return filter;
     }
 
-    MorphlyG1Filter::MorphlyG1Filter(LPUNKNOWN outerUnknown, HRESULT* result)
-        : CSource(NAME("Morphly G1"), outerUnknown, kVirtualCameraSourceClsid)
+    SurevideotoolFilter::SurevideotoolFilter(LPUNKNOWN outerUnknown, HRESULT* result)
+        : CSource(NAME("Surevideotool"), outerUnknown, kVirtualCameraSourceClsid)
     {
-        stream_ = new MorphlyG1Stream(result, this, L"Output");
+        stream_ = new SurevideotoolStream(result, this, L"Output");
         if (stream_ == nullptr && result != nullptr)
         {
             *result = E_OUTOFMEMORY;
@@ -837,12 +837,12 @@ namespace morphly::virtualcam
         StartFrameProvider();
     }
 
-    MorphlyG1Filter::~MorphlyG1Filter()
+    SurevideotoolFilter::~SurevideotoolFilter()
     {
         StopFrameProvider();
     }
 
-    STDMETHODIMP MorphlyG1Filter::NonDelegatingQueryInterface(REFIID interfaceId, void** object)
+    STDMETHODIMP SurevideotoolFilter::NonDelegatingQueryInterface(REFIID interfaceId, void** object)
     {
         CheckPointer(object, E_POINTER);
 
@@ -854,35 +854,35 @@ namespace morphly::virtualcam
         return CSource::NonDelegatingQueryInterface(interfaceId, object);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Filter::SetFormat(AM_MEDIA_TYPE* mediaType)
+    HRESULT STDMETHODCALLTYPE SurevideotoolFilter::SetFormat(AM_MEDIA_TYPE* mediaType)
     {
         return stream_ == nullptr ? E_UNEXPECTED : stream_->SetFormat(mediaType);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Filter::GetFormat(AM_MEDIA_TYPE** mediaType)
+    HRESULT STDMETHODCALLTYPE SurevideotoolFilter::GetFormat(AM_MEDIA_TYPE** mediaType)
     {
         return stream_ == nullptr ? E_UNEXPECTED : stream_->GetFormat(mediaType);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Filter::GetNumberOfCapabilities(int* count, int* size)
+    HRESULT STDMETHODCALLTYPE SurevideotoolFilter::GetNumberOfCapabilities(int* count, int* size)
     {
         return stream_ == nullptr ? E_UNEXPECTED : stream_->GetNumberOfCapabilities(count, size);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Filter::GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities)
+    HRESULT STDMETHODCALLTYPE SurevideotoolFilter::GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities)
     {
         return stream_ == nullptr ? E_UNEXPECTED : stream_->GetStreamCaps(index, mediaType, capabilities);
     }
 
-    MorphlyG1Stream::MorphlyG1Stream(HRESULT* result, MorphlyG1Filter* parentFilter, LPCWSTR pinName)
-        : CSourceStream(NAME("Morphly G1 Stream"), result, parentFilter, pinName)
+    SurevideotoolStream::SurevideotoolStream(HRESULT* result, SurevideotoolFilter* parentFilter, LPCWSTR pinName)
+        : CSourceStream(NAME("Surevideotool Stream"), result, parentFilter, pinName)
     {
         bgraScratch_.resize(kBgraFrameBytes, 0);
     }
 
-    MorphlyG1Stream::~MorphlyG1Stream() = default;
+    SurevideotoolStream::~SurevideotoolStream() = default;
 
-    STDMETHODIMP MorphlyG1Stream::NonDelegatingQueryInterface(REFIID interfaceId, void** object)
+    STDMETHODIMP SurevideotoolStream::NonDelegatingQueryInterface(REFIID interfaceId, void** object)
     {
         CheckPointer(object, E_POINTER);
 
@@ -899,12 +899,12 @@ namespace morphly::virtualcam
         return CSourceStream::NonDelegatingQueryInterface(interfaceId, object);
     }
 
-    STDMETHODIMP MorphlyG1Stream::Notify(IBaseFilter*, Quality)
+    STDMETHODIMP SurevideotoolStream::Notify(IBaseFilter*, Quality)
     {
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::DecideBufferSize(IMemAllocator* allocator, ALLOCATOR_PROPERTIES* properties)
+    HRESULT SurevideotoolStream::DecideBufferSize(IMemAllocator* allocator, ALLOCATOR_PROPERTIES* properties)
     {
         CheckPointer(allocator, E_POINTER);
         CheckPointer(properties, E_POINTER);
@@ -932,7 +932,7 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::FillBuffer(IMediaSample* mediaSample)
+    HRESULT SurevideotoolStream::FillBuffer(IMediaSample* mediaSample)
     {
         CheckPointer(mediaSample, E_POINTER);
 
@@ -1025,25 +1025,25 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::GetMediaType(CMediaType* mediaType)
+    HRESULT SurevideotoolStream::GetMediaType(CMediaType* mediaType)
     {
         CheckPointer(mediaType, E_POINTER);
         FillFixedYuy2MediaType(mediaType);
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::CheckMediaType(const CMediaType* mediaType)
+    HRESULT SurevideotoolStream::CheckMediaType(const CMediaType* mediaType)
     {
         return ValidateFixedYuy2MediaType(mediaType);
     }
 
-    HRESULT MorphlyG1Stream::OnThreadCreate()
+    HRESULT SurevideotoolStream::OnThreadCreate()
     {
         nextFrameDue_ = std::chrono::steady_clock::now();
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::SetMediaType(const CMediaType* mediaType)
+    HRESULT SurevideotoolStream::SetMediaType(const CMediaType* mediaType)
     {
         CheckPointer(mediaType, E_POINTER);
 
@@ -1066,17 +1066,17 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT MorphlyG1Stream::OnThreadDestroy()
+    HRESULT SurevideotoolStream::OnThreadDestroy()
     {
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::Set(REFGUID, DWORD, LPVOID, DWORD, LPVOID, DWORD)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::Set(REFGUID, DWORD, LPVOID, DWORD, LPVOID, DWORD)
     {
         return E_NOTIMPL;
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::Get(
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::Get(
         REFGUID propertySet,
         DWORD propertyId,
         LPVOID,
@@ -1118,7 +1118,7 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::QuerySupported(REFGUID propertySet, DWORD propertyId, DWORD* typeSupport)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::QuerySupported(REFGUID propertySet, DWORD propertyId, DWORD* typeSupport)
     {
         if (propertySet != AMPROPSETID_Pin)
         {
@@ -1138,7 +1138,7 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::SetFormat(AM_MEDIA_TYPE* mediaType)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::SetFormat(AM_MEDIA_TYPE* mediaType)
     {
         CheckPointer(mediaType, E_POINTER);
 
@@ -1152,12 +1152,12 @@ namespace morphly::virtualcam
         return SetMediaType(&requestedType);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::GetFormat(AM_MEDIA_TYPE** mediaType)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::GetFormat(AM_MEDIA_TYPE** mediaType)
     {
         return CreateFixedYuy2MediaType(mediaType);
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::GetNumberOfCapabilities(int* count, int* size)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::GetNumberOfCapabilities(int* count, int* size)
     {
         if (count == nullptr || size == nullptr)
         {
@@ -1169,7 +1169,7 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE MorphlyG1Stream::GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities)
+    HRESULT STDMETHODCALLTYPE SurevideotoolStream::GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities)
     {
         if (mediaType == nullptr || capabilities == nullptr)
         {
@@ -1191,8 +1191,8 @@ namespace morphly::virtualcam
         return S_OK;
     }
 
-    MorphlyG1Filter* MorphlyG1Stream::GetParentFilter() const
+    SurevideotoolFilter* SurevideotoolStream::GetParentFilter() const
     {
-        return static_cast<MorphlyG1Filter*>(m_pFilter);
+        return static_cast<SurevideotoolFilter*>(m_pFilter);
     }
 }

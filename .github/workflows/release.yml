@@ -24,11 +24,11 @@ jobs:
         cache: 'npm'
         cache-dependency-path: app/package-lock.json
 
-    - name: Configure native Morphly camera build
+    - name: Configure native Surevideotool camera build
       shell: pwsh
       run: cmake -S native-camera -B native-camera/build -A x64
 
-    - name: Build native Morphly camera artifacts
+    - name: Build native Surevideotool camera artifacts
       shell: pwsh
       run: cmake --build native-camera/build --config Release
 
@@ -94,7 +94,7 @@ jobs:
       working-directory: app
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        MORPHLY_NATIVE_BUILD_DIR: ../native-camera/build
+        SUREVIDEOTOOL_NATIVE_BUILD_DIR: ../native-camera/build
         VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || vars.SUPABASE_URL || secrets.SUPABASE_URL }}
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
         VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
@@ -151,13 +151,13 @@ jobs:
         if (!$exe1) { throw "Missing installer. Checked: $($installerCandidates -join ', ')" }
         if (!$exe2) { throw "Missing portable build. Checked: $($portableCandidates -join ', ')" }
 
-        $bundledCameraDir = Join-Path $dir "win-unpacked/resources/morphly-cam"
+        $bundledCameraDir = Join-Path $dir "win-unpacked/resources/surevideotool-cam"
         if (!(Test-Path $bundledCameraDir)) { throw "Missing bundled camera directory: $bundledCameraDir" }
 
         $expectedArtifacts = @(
-          "MorphlyVirtualCamera.dll",
-          "morphly_cam_registrar.exe",
-          "morphly_cam_pipe_publisher.exe"
+          "SurevideotoolVirtualCamera.dll",
+          "surevideotool_cam_registrar.exe",
+          "surevideotool_cam_pipe_publisher.exe"
         )
 
         foreach ($artifact in $expectedArtifacts) {

@@ -19,8 +19,8 @@
 #include <strsafe.h>
 #include <wrl.h>
 
-#include "morphly/morphly_ids.h"
-#include "morphly/morphly_protocol.h"
+#include "surevideotool/surevideotool_ids.h"
+#include "surevideotool/surevideotool_protocol.h"
 
 using Microsoft::WRL::ComPtr;
 using Microsoft::WRL::Make;
@@ -39,7 +39,7 @@ using Microsoft::WRL::RuntimeClassFlags;
     } while (false)
 #endif
 
-namespace morphly::virtualcam
+namespace surevideotool::virtualcam
 {
     namespace
     {
@@ -64,7 +64,7 @@ namespace morphly::virtualcam
             OutputDebugStringW(wideLine);
 
             HANDLE file = CreateFileW(
-                L"C:\\ProgramData\\MorphlyG1\\mf_source.log",
+                L"C:\\ProgramData\\Surevideotool\\mf_source.log",
                 FILE_APPEND_DATA,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                 nullptr,
@@ -617,7 +617,7 @@ namespace morphly::virtualcam
                 HRESULT fileBridgeHr = EnsureOpenFileBridgeLocked();
                 if (SUCCEEDED(fileBridgeHr))
                 {
-                    AppendMfVirtualCameraLogLine(L"Using file-backed Morphly camera bridge.");
+                    AppendMfVirtualCameraLogLine(L"Using file-backed Surevideotool camera bridge.");
                     return S_OK;
                 }
 
@@ -639,7 +639,7 @@ namespace morphly::virtualcam
                     kGlobalPublisherEventName);
                 if (SUCCEEDED(globalHr))
                 {
-                    AppendMfVirtualCameraLogLine(L"Using Global Morphly camera bridge.");
+                    AppendMfVirtualCameraLogLine(L"Using Global Surevideotool camera bridge.");
                     return S_OK;
                 }
 
@@ -661,7 +661,7 @@ namespace morphly::virtualcam
                     kPublisherMutexName,
                     kPublisherEventName));
 
-                AppendMfVirtualCameraLogLine(L"Using Local Morphly camera bridge.");
+                AppendMfVirtualCameraLogLine(L"Using Local Surevideotool camera bridge.");
 
                 return S_OK;
             }
@@ -966,22 +966,22 @@ namespace morphly::virtualcam
             MediaConfig defaultConfig_{};
         };
 
-        class MorphlyMediaSource;
+        class SurevideotoolMediaSource;
 
-        class MorphlyMediaStream final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFMediaStream2>
+        class SurevideotoolMediaStream final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFMediaStream2>
         {
         public:
-            MorphlyMediaStream()
+            SurevideotoolMediaStream()
             {
                 AddObjectRef();
             }
 
-            ~MorphlyMediaStream() override
+            ~SurevideotoolMediaStream() override
             {
                 ReleaseObjectRef();
             }
 
-            HRESULT Initialize(MorphlyMediaSource* parent, const MediaConfig& config);
+            HRESULT Initialize(SurevideotoolMediaSource* parent, const MediaConfig& config);
             HRESULT Start(IMFMediaType* mediaType, bool sendEvents);
             HRESULT Stop(bool sendEvents);
             HRESULT ShutdownStream();
@@ -1004,7 +1004,7 @@ namespace morphly::virtualcam
             HRESULT CreateNextSample(IMFMediaType* mediaType, IMFSample** sample);
 
             mutable std::mutex lock_;
-            MorphlyMediaSource* parent_ = nullptr;
+            SurevideotoolMediaSource* parent_ = nullptr;
             ComPtr<IMFMediaEventQueue> eventQueue_;
             ComPtr<IMFAttributes> attributes_;
             ComPtr<IMFStreamDescriptor> streamDescriptor_;
@@ -1020,15 +1020,15 @@ namespace morphly::virtualcam
             uint64_t syntheticFrameIndex_ = 0;
         };
 
-        class MorphlyMediaSource final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFMediaSourceEx, IMFGetService, IKsControl, IMFSampleAllocatorControl>
+        class SurevideotoolMediaSource final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFMediaSourceEx, IMFGetService, IKsControl, IMFSampleAllocatorControl>
         {
         public:
-            MorphlyMediaSource()
+            SurevideotoolMediaSource()
             {
                 AddObjectRef();
             }
 
-            ~MorphlyMediaSource() override
+            ~SurevideotoolMediaSource() override
             {
                 ReleaseObjectRef();
             }
@@ -1064,20 +1064,20 @@ namespace morphly::virtualcam
             ComPtr<IMFMediaEventQueue> eventQueue_;
             ComPtr<IMFAttributes> sourceAttributes_;
             ComPtr<IMFPresentationDescriptor> presentationDescriptor_;
-            ComPtr<MorphlyMediaStream> stream_;
+            ComPtr<SurevideotoolMediaStream> stream_;
 
             HRESULT CreateSourceAttributes(IMFAttributes* activateAttributes);
         };
 
-        class MorphlyMediaSourceActivate final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFActivate>
+        class SurevideotoolMediaSourceActivate final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IMFActivate>
         {
         public:
-            MorphlyMediaSourceActivate()
+            SurevideotoolMediaSourceActivate()
             {
                 AddObjectRef();
             }
 
-            ~MorphlyMediaSourceActivate() override
+            ~SurevideotoolMediaSourceActivate() override
             {
                 ReleaseObjectRef();
             }
@@ -1130,18 +1130,18 @@ namespace morphly::virtualcam
 
         private:
             ComPtr<IMFAttributes> attributes_;
-            ComPtr<MorphlyMediaSource> activeSource_;
+            ComPtr<SurevideotoolMediaSource> activeSource_;
         };
 
-        class MorphlyClassFactory final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IClassFactory>
+        class SurevideotoolClassFactory final : public RuntimeClass<RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IClassFactory>
         {
         public:
-            MorphlyClassFactory()
+            SurevideotoolClassFactory()
             {
                 AddObjectRef();
             }
 
-            ~MorphlyClassFactory() override
+            ~SurevideotoolClassFactory() override
             {
                 ReleaseObjectRef();
             }
@@ -1160,7 +1160,7 @@ namespace morphly::virtualcam
                     return CLASS_E_NOAGGREGATION;
                 }
 
-                auto activate = Make<MorphlyMediaSourceActivate>();
+                auto activate = Make<SurevideotoolMediaSourceActivate>();
                 if (!activate)
                 {
                     return E_OUTOFMEMORY;
@@ -1185,7 +1185,7 @@ namespace morphly::virtualcam
             }
         };
 
-        HRESULT MorphlyMediaStream::Initialize(MorphlyMediaSource* parent, const MediaConfig& config)
+        HRESULT SurevideotoolMediaStream::Initialize(SurevideotoolMediaSource* parent, const MediaConfig& config)
         {
             if (parent == nullptr)
             {
@@ -1224,7 +1224,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::QueryInterface(REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaStream::QueryInterface(REFIID interfaceId, void** object)
         {
             if (object == nullptr)
             {
@@ -1252,7 +1252,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaStream::Start(IMFMediaType* mediaType, bool sendEvents)
+        HRESULT SurevideotoolMediaStream::Start(IMFMediaType* mediaType, bool sendEvents)
         {
             std::lock_guard<std::mutex> guard(lock_);
 
@@ -1282,7 +1282,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaStream::Stop(bool sendEvents)
+        HRESULT SurevideotoolMediaStream::Stop(bool sendEvents)
         {
             std::lock_guard<std::mutex> guard(lock_);
 
@@ -1302,7 +1302,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaStream::ShutdownStream()
+        HRESULT SurevideotoolMediaStream::ShutdownStream()
         {
             std::lock_guard<std::mutex> guard(lock_);
 
@@ -1325,18 +1325,18 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        bool MorphlyMediaStream::IsSelected() const noexcept
+        bool SurevideotoolMediaStream::IsSelected() const noexcept
         {
             std::lock_guard<std::mutex> guard(lock_);
             return isSelected_;
         }
 
-        DWORD MorphlyMediaStream::StreamIdentifier() const noexcept
+        DWORD SurevideotoolMediaStream::StreamIdentifier() const noexcept
         {
             return kStreamId;
         }
 
-        HRESULT MorphlyMediaStream::CopyAttributes(IMFAttributes** attributes)
+        HRESULT SurevideotoolMediaStream::CopyAttributes(IMFAttributes** attributes)
         {
             if (attributes == nullptr)
             {
@@ -1348,7 +1348,7 @@ namespace morphly::virtualcam
             return attributes_.CopyTo(attributes);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::BeginGetEvent(IMFAsyncCallback* callback, IUnknown* state)
+        IFACEMETHODIMP SurevideotoolMediaStream::BeginGetEvent(IMFAsyncCallback* callback, IUnknown* state)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (isShutdown_)
@@ -1359,7 +1359,7 @@ namespace morphly::virtualcam
             return eventQueue_->BeginGetEvent(callback, state);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::EndGetEvent(IMFAsyncResult* result, IMFMediaEvent** eventValue)
+        IFACEMETHODIMP SurevideotoolMediaStream::EndGetEvent(IMFAsyncResult* result, IMFMediaEvent** eventValue)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (isShutdown_)
@@ -1370,7 +1370,7 @@ namespace morphly::virtualcam
             return eventQueue_->EndGetEvent(result, eventValue);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::GetEvent(DWORD flags, IMFMediaEvent** eventValue)
+        IFACEMETHODIMP SurevideotoolMediaStream::GetEvent(DWORD flags, IMFMediaEvent** eventValue)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (isShutdown_)
@@ -1381,7 +1381,7 @@ namespace morphly::virtualcam
             return eventQueue_->GetEvent(flags, eventValue);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::QueueEvent(MediaEventType eventType, REFGUID extendedType, HRESULT status, const PROPVARIANT* value)
+        IFACEMETHODIMP SurevideotoolMediaStream::QueueEvent(MediaEventType eventType, REFGUID extendedType, HRESULT status, const PROPVARIANT* value)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (isShutdown_)
@@ -1392,7 +1392,7 @@ namespace morphly::virtualcam
             return eventQueue_->QueueEventParamVar(eventType, extendedType, status, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::GetMediaSource(IMFMediaSource** mediaSource)
+        IFACEMETHODIMP SurevideotoolMediaStream::GetMediaSource(IMFMediaSource** mediaSource)
         {
             if (mediaSource == nullptr)
             {
@@ -1410,7 +1410,7 @@ namespace morphly::virtualcam
             return parent_->QueryInterface(IID_PPV_ARGS(mediaSource));
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::GetStreamDescriptor(IMFStreamDescriptor** streamDescriptor)
+        IFACEMETHODIMP SurevideotoolMediaStream::GetStreamDescriptor(IMFStreamDescriptor** streamDescriptor)
         {
             if (streamDescriptor == nullptr)
             {
@@ -1428,7 +1428,7 @@ namespace morphly::virtualcam
             return streamDescriptor_.CopyTo(streamDescriptor);
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::RequestSample(IUnknown* token)
+        IFACEMETHODIMP SurevideotoolMediaStream::RequestSample(IUnknown* token)
         {
             AppendMfVirtualCameraLogLine(L"[Stream::RequestSample] called.");
             ComPtr<IMFMediaEventQueue> eventQueue;
@@ -1461,7 +1461,7 @@ namespace morphly::virtualcam
             return eventQueue->QueueEventParamUnk(MEMediaSample, GUID_NULL, S_OK, sample.Get());
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::SetStreamState(MF_STREAM_STATE value)
+        IFACEMETHODIMP SurevideotoolMediaStream::SetStreamState(MF_STREAM_STATE value)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (isShutdown_)
@@ -1474,7 +1474,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaStream::GetStreamState(MF_STREAM_STATE* value)
+        IFACEMETHODIMP SurevideotoolMediaStream::GetStreamState(MF_STREAM_STATE* value)
         {
             if (value == nullptr)
             {
@@ -1491,7 +1491,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaStream::CreateNextSample(IMFMediaType* mediaType, IMFSample** sample)
+        HRESULT SurevideotoolMediaStream::CreateNextSample(IMFMediaType* mediaType, IMFSample** sample)
         {
             if (sample == nullptr || mediaType == nullptr)
             {
@@ -1653,7 +1653,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaSource::Initialize(IMFAttributes* activateAttributes)
+        HRESULT SurevideotoolMediaSource::Initialize(IMFAttributes* activateAttributes)
         {
             std::lock_guard<std::mutex> guard(lock_);
 
@@ -1672,7 +1672,7 @@ namespace morphly::virtualcam
             RETURN_IF_FAILED(MFCreateEventQueue(&eventQueue_));
             RETURN_IF_FAILED(CreateSourceAttributes(activateAttributes));
 
-            stream_ = Make<MorphlyMediaStream>();
+            stream_ = Make<SurevideotoolMediaStream>();
             if (!stream_)
             {
                 return E_OUTOFMEMORY;
@@ -1691,7 +1691,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        HRESULT MorphlyMediaSource::CreateSourceAttributes(IMFAttributes* activateAttributes)
+        HRESULT SurevideotoolMediaSource::CreateSourceAttributes(IMFAttributes* activateAttributes)
         {
             RETURN_IF_FAILED(MFCreateAttributes(&sourceAttributes_, 4));
             if (activateAttributes != nullptr)
@@ -1714,7 +1714,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::QueryInterface(REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaSource::QueryInterface(REFIID interfaceId, void** object)
         {
             if (object == nullptr)
             {
@@ -1754,7 +1754,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::QueryInterface(REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::QueryInterface(REFIID interfaceId, void** object)
         {
             if (object == nullptr)
             {
@@ -1780,7 +1780,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::ActivateObject(REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::ActivateObject(REFIID interfaceId, void** object)
         {
             if (object == nullptr)
             {
@@ -1789,7 +1789,7 @@ namespace morphly::virtualcam
 
             *object = nullptr;
 
-            auto source = Make<MorphlyMediaSource>();
+            auto source = Make<SurevideotoolMediaSource>();
             if (!source)
             {
                 return E_OUTOFMEMORY;
@@ -1800,7 +1800,7 @@ namespace morphly::virtualcam
             return source->QueryInterface(interfaceId, object);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::ShutdownObject()
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::ShutdownObject()
         {
             if (activeSource_)
             {
@@ -1811,163 +1811,163 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::DetachObject()
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::DetachObject()
         {
             activeSource_.Reset();
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetItem(REFGUID key, PROPVARIANT* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetItem(REFGUID key, PROPVARIANT* value)
         {
             return attributes_->GetItem(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetItemType(REFGUID key, MF_ATTRIBUTE_TYPE* type)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetItemType(REFGUID key, MF_ATTRIBUTE_TYPE* type)
         {
             return attributes_->GetItemType(key, type);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::CompareItem(REFGUID key, REFPROPVARIANT value, BOOL* result)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::CompareItem(REFGUID key, REFPROPVARIANT value, BOOL* result)
         {
             return attributes_->CompareItem(key, value, result);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::Compare(IMFAttributes* theirs, MF_ATTRIBUTES_MATCH_TYPE matchType, BOOL* result)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::Compare(IMFAttributes* theirs, MF_ATTRIBUTES_MATCH_TYPE matchType, BOOL* result)
         {
             return attributes_->Compare(theirs, matchType, result);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetUINT32(REFGUID key, UINT32* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetUINT32(REFGUID key, UINT32* value)
         {
             return attributes_->GetUINT32(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetUINT64(REFGUID key, UINT64* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetUINT64(REFGUID key, UINT64* value)
         {
             return attributes_->GetUINT64(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetDouble(REFGUID key, double* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetDouble(REFGUID key, double* value)
         {
             return attributes_->GetDouble(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetGUID(REFGUID key, GUID* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetGUID(REFGUID key, GUID* value)
         {
             return attributes_->GetGUID(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetStringLength(REFGUID key, UINT32* length)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetStringLength(REFGUID key, UINT32* length)
         {
             return attributes_->GetStringLength(key, length);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetString(REFGUID key, LPWSTR value, UINT32 valueSize, UINT32* length)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetString(REFGUID key, LPWSTR value, UINT32 valueSize, UINT32* length)
         {
             return attributes_->GetString(key, value, valueSize, length);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetAllocatedString(REFGUID key, LPWSTR* value, UINT32* length)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetAllocatedString(REFGUID key, LPWSTR* value, UINT32* length)
         {
             return attributes_->GetAllocatedString(key, value, length);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetBlobSize(REFGUID key, UINT32* size)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetBlobSize(REFGUID key, UINT32* size)
         {
             return attributes_->GetBlobSize(key, size);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetBlob(REFGUID key, UINT8* buffer, UINT32 bufferSize, UINT32* size)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetBlob(REFGUID key, UINT8* buffer, UINT32 bufferSize, UINT32* size)
         {
             return attributes_->GetBlob(key, buffer, bufferSize, size);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetAllocatedBlob(REFGUID key, UINT8** buffer, UINT32* size)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetAllocatedBlob(REFGUID key, UINT8** buffer, UINT32* size)
         {
             return attributes_->GetAllocatedBlob(key, buffer, size);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetUnknown(REFGUID key, REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetUnknown(REFGUID key, REFIID interfaceId, void** object)
         {
             return attributes_->GetUnknown(key, interfaceId, object);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetItem(REFGUID key, REFPROPVARIANT value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetItem(REFGUID key, REFPROPVARIANT value)
         {
             return attributes_->SetItem(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::DeleteItem(REFGUID key)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::DeleteItem(REFGUID key)
         {
             return attributes_->DeleteItem(key);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::DeleteAllItems()
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::DeleteAllItems()
         {
             return attributes_->DeleteAllItems();
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetUINT32(REFGUID key, UINT32 value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetUINT32(REFGUID key, UINT32 value)
         {
             return attributes_->SetUINT32(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetUINT64(REFGUID key, UINT64 value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetUINT64(REFGUID key, UINT64 value)
         {
             return attributes_->SetUINT64(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetDouble(REFGUID key, double value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetDouble(REFGUID key, double value)
         {
             return attributes_->SetDouble(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetGUID(REFGUID key, REFGUID value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetGUID(REFGUID key, REFGUID value)
         {
             return attributes_->SetGUID(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetString(REFGUID key, LPCWSTR value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetString(REFGUID key, LPCWSTR value)
         {
             return attributes_->SetString(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetBlob(REFGUID key, const UINT8* buffer, UINT32 bufferSize)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetBlob(REFGUID key, const UINT8* buffer, UINT32 bufferSize)
         {
             return attributes_->SetBlob(key, buffer, bufferSize);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::SetUnknown(REFGUID key, IUnknown* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::SetUnknown(REFGUID key, IUnknown* value)
         {
             return attributes_->SetUnknown(key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::LockStore()
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::LockStore()
         {
             return attributes_->LockStore();
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::UnlockStore()
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::UnlockStore()
         {
             return attributes_->UnlockStore();
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetCount(UINT32* items)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetCount(UINT32* items)
         {
             return attributes_->GetCount(items);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::GetItemByIndex(UINT32 index, GUID* key, PROPVARIANT* value)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::GetItemByIndex(UINT32 index, GUID* key, PROPVARIANT* value)
         {
             return attributes_->GetItemByIndex(index, key, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSourceActivate::CopyAllItems(IMFAttributes* destination)
+        IFACEMETHODIMP SurevideotoolMediaSourceActivate::CopyAllItems(IMFAttributes* destination)
         {
             return attributes_->CopyAllItems(destination);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::BeginGetEvent(IMFAsyncCallback* callback, IUnknown* state)
+        IFACEMETHODIMP SurevideotoolMediaSource::BeginGetEvent(IMFAsyncCallback* callback, IUnknown* state)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (state_ == SourceState::Shutdown)
@@ -1978,7 +1978,7 @@ namespace morphly::virtualcam
             return eventQueue_->BeginGetEvent(callback, state);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::EndGetEvent(IMFAsyncResult* result, IMFMediaEvent** eventValue)
+        IFACEMETHODIMP SurevideotoolMediaSource::EndGetEvent(IMFAsyncResult* result, IMFMediaEvent** eventValue)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (state_ == SourceState::Shutdown)
@@ -1989,7 +1989,7 @@ namespace morphly::virtualcam
             return eventQueue_->EndGetEvent(result, eventValue);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetEvent(DWORD flags, IMFMediaEvent** eventValue)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetEvent(DWORD flags, IMFMediaEvent** eventValue)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (state_ == SourceState::Shutdown)
@@ -2000,7 +2000,7 @@ namespace morphly::virtualcam
             return eventQueue_->GetEvent(flags, eventValue);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::QueueEvent(MediaEventType eventType, REFGUID extendedType, HRESULT status, const PROPVARIANT* value)
+        IFACEMETHODIMP SurevideotoolMediaSource::QueueEvent(MediaEventType eventType, REFGUID extendedType, HRESULT status, const PROPVARIANT* value)
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (state_ == SourceState::Shutdown)
@@ -2011,7 +2011,7 @@ namespace morphly::virtualcam
             return eventQueue_->QueueEventParamVar(eventType, extendedType, status, value);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetCharacteristics(DWORD* characteristics)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetCharacteristics(DWORD* characteristics)
         {
             if (characteristics == nullptr)
             {
@@ -2028,7 +2028,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::CreatePresentationDescriptor(IMFPresentationDescriptor** presentationDescriptor)
+        IFACEMETHODIMP SurevideotoolMediaSource::CreatePresentationDescriptor(IMFPresentationDescriptor** presentationDescriptor)
         {
             if (presentationDescriptor == nullptr)
             {
@@ -2046,7 +2046,7 @@ namespace morphly::virtualcam
             return presentationDescriptor_->Clone(presentationDescriptor);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::Start(IMFPresentationDescriptor* presentationDescriptor, const GUID* timeFormat, const PROPVARIANT* startPosition)
+        IFACEMETHODIMP SurevideotoolMediaSource::Start(IMFPresentationDescriptor* presentationDescriptor, const GUID* timeFormat, const PROPVARIANT* startPosition)
         {
             AppendMfVirtualCameraLogLine(L"[Source::Start] called.");
             if (presentationDescriptor == nullptr || startPosition == nullptr)
@@ -2126,7 +2126,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::Stop()
+        IFACEMETHODIMP SurevideotoolMediaSource::Stop()
         {
             std::lock_guard<std::mutex> guard(lock_);
             if (state_ == SourceState::Shutdown)
@@ -2144,12 +2144,12 @@ namespace morphly::virtualcam
             return eventQueue_->QueueEventParamVar(MESourceStopped, GUID_NULL, S_OK, nullptr);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::Pause()
+        IFACEMETHODIMP SurevideotoolMediaSource::Pause()
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::Shutdown()
+        IFACEMETHODIMP SurevideotoolMediaSource::Shutdown()
         {
             std::lock_guard<std::mutex> guard(lock_);
 
@@ -2177,7 +2177,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetSourceAttributes(IMFAttributes** attributes)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetSourceAttributes(IMFAttributes** attributes)
         {
             if (attributes == nullptr)
             {
@@ -2195,7 +2195,7 @@ namespace morphly::virtualcam
             return sourceAttributes_.CopyTo(attributes);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetStreamAttributes(DWORD streamIdentifier, IMFAttributes** attributes)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetStreamAttributes(DWORD streamIdentifier, IMFAttributes** attributes)
         {
             if (attributes == nullptr)
             {
@@ -2218,12 +2218,12 @@ namespace morphly::virtualcam
             return stream_->CopyAttributes(attributes);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::SetD3DManager(IUnknown* /*manager*/)
+        IFACEMETHODIMP SurevideotoolMediaSource::SetD3DManager(IUnknown* /*manager*/)
         {
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetService(REFGUID /*serviceGuid*/, REFIID interfaceId, void** object)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetService(REFGUID /*serviceGuid*/, REFIID interfaceId, void** object)
         {
             if (object == nullptr)
             {
@@ -2240,7 +2240,7 @@ namespace morphly::virtualcam
             return MF_E_UNSUPPORTED_SERVICE;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::KsProperty(PKSPROPERTY /*property*/, ULONG /*propertyLength*/, void* /*propertyData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
+        IFACEMETHODIMP SurevideotoolMediaSource::KsProperty(PKSPROPERTY /*property*/, ULONG /*propertyLength*/, void* /*propertyData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
         {
             if (bytesReturned != nullptr)
             {
@@ -2250,7 +2250,7 @@ namespace morphly::virtualcam
             return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::KsMethod(PKSMETHOD /*method*/, ULONG /*methodLength*/, void* /*methodData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
+        IFACEMETHODIMP SurevideotoolMediaSource::KsMethod(PKSMETHOD /*method*/, ULONG /*methodLength*/, void* /*methodData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
         {
             if (bytesReturned != nullptr)
             {
@@ -2260,7 +2260,7 @@ namespace morphly::virtualcam
             return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::KsEvent(PKSEVENT /*eventValue*/, ULONG /*eventLength*/, void* /*eventData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
+        IFACEMETHODIMP SurevideotoolMediaSource::KsEvent(PKSEVENT /*eventValue*/, ULONG /*eventLength*/, void* /*eventData*/, ULONG /*dataLength*/, ULONG* bytesReturned)
         {
             if (bytesReturned != nullptr)
             {
@@ -2270,7 +2270,7 @@ namespace morphly::virtualcam
             return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::SetDefaultAllocator(DWORD outputStreamId, IUnknown* /*allocator*/)
+        IFACEMETHODIMP SurevideotoolMediaSource::SetDefaultAllocator(DWORD outputStreamId, IUnknown* /*allocator*/)
         {
             if (outputStreamId != kStreamId)
             {
@@ -2280,7 +2280,7 @@ namespace morphly::virtualcam
             return S_OK;
         }
 
-        IFACEMETHODIMP MorphlyMediaSource::GetAllocatorUsage(DWORD outputStreamId, DWORD* inputStreamId, MFSampleAllocatorUsage* usage)
+        IFACEMETHODIMP SurevideotoolMediaSource::GetAllocatorUsage(DWORD outputStreamId, DWORD* inputStreamId, MFSampleAllocatorUsage* usage)
         {
             if (inputStreamId == nullptr || usage == nullptr)
             {
@@ -2317,7 +2317,7 @@ namespace morphly::virtualcam
             return CLASS_E_CLASSNOTAVAILABLE;
         }
 
-        auto factory = Make<MorphlyClassFactory>();
+        auto factory = Make<SurevideotoolClassFactory>();
         if (!factory)
         {
             return E_OUTOFMEMORY;

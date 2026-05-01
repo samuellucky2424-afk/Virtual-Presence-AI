@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { once } from 'events';
 
-const GITHUB_RELEASES_URL = 'https://github.com/samuellucky2424-afk/morphly/releases';
+const GITHUB_RELEASES_URL = 'https://github.com/samuellucky2424-afk/Surevideotool-project/releases';
 
 function normalizePackageType(value) {
   return value === 'portable' ? 'portable' : 'installer';
@@ -17,7 +17,7 @@ function buildAssetName(version, packageType) {
     : `Surevideotool-Setup-${safeVersion}.exe`;
 }
 
-const DEFAULT_MANIFEST_URL = process.env.MORPHLY_UPDATE_MANIFEST_URL
+const DEFAULT_MANIFEST_URL = process.env.SUREVIDEOTOOL_UPDATE_MANIFEST_URL
   || process.env.VITE_UPDATE_MANIFEST_URL
   || 'https://surevideotool-project.vercel.app/api/version';
 

@@ -6,11 +6,11 @@
 
 #include <streams.h>
 
-namespace morphly::virtualcam
+namespace surevideotool::virtualcam
 {
-    class MorphlyG1Stream;
+    class SurevideotoolStream;
 
-    class MorphlyG1Filter final : public CSource, public IAMStreamConfig
+    class SurevideotoolFilter final : public CSource, public IAMStreamConfig
     {
     public:
         static CUnknown* WINAPI CreateInstance(LPUNKNOWN outerUnknown, HRESULT* result);
@@ -25,18 +25,18 @@ namespace morphly::virtualcam
         HRESULT STDMETHODCALLTYPE GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities) override;
 
     private:
-        explicit MorphlyG1Filter(LPUNKNOWN outerUnknown, HRESULT* result);
-        ~MorphlyG1Filter() override;
+        explicit SurevideotoolFilter(LPUNKNOWN outerUnknown, HRESULT* result);
+        ~SurevideotoolFilter() override;
 
         CCritSec configLock_;
-        MorphlyG1Stream* stream_ = nullptr;
+        SurevideotoolStream* stream_ = nullptr;
     };
 
-    class MorphlyG1Stream final : public CSourceStream, public IKsPropertySet, public IAMStreamConfig
+    class SurevideotoolStream final : public CSourceStream, public IKsPropertySet, public IAMStreamConfig
     {
     public:
-        MorphlyG1Stream(HRESULT* result, MorphlyG1Filter* parentFilter, LPCWSTR pinName);
-        ~MorphlyG1Stream() override;
+        SurevideotoolStream(HRESULT* result, SurevideotoolFilter* parentFilter, LPCWSTR pinName);
+        ~SurevideotoolStream() override;
 
         DECLARE_IUNKNOWN
 
@@ -61,7 +61,7 @@ namespace morphly::virtualcam
         HRESULT STDMETHODCALLTYPE GetStreamCaps(int index, AM_MEDIA_TYPE** mediaType, BYTE* capabilities) override;
 
     private:
-        MorphlyG1Filter* GetParentFilter() const;
+        SurevideotoolFilter* GetParentFilter() const;
 
         CCritSec sampleLock_;
         std::uint64_t frameIndex_ = 0;

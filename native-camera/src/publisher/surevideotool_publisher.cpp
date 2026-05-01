@@ -1,14 +1,14 @@
-#include "morphly/morphly_publisher.h"
+#include "surevideotool/surevideotool_publisher.h"
 
 #include <cstdio>
 #include <cstring>
 #include <sddl.h>
 #include <winnt.h>
 
-#include "morphly/morphly_ids.h"
-#include "morphly/morphly_protocol.h"
+#include "surevideotool/surevideotool_ids.h"
+#include "surevideotool/surevideotool_protocol.h"
 
-namespace morphly
+namespace surevideotool
 {
     namespace
     {
@@ -45,7 +45,7 @@ namespace morphly
                 return;
             }
 
-            std::fprintf(stderr, "[MorphlyPublisher] %s HRESULT=0x%08lX\n", message, static_cast<unsigned long>(hr));
+            std::fprintf(stderr, "[SurevideotoolPublisher] %s HRESULT=0x%08lX\n", message, static_cast<unsigned long>(hr));
             std::fflush(stderr);
         }
 
@@ -620,7 +620,7 @@ namespace morphly
         }
         else
         {
-            std::fprintf(stderr, "[MorphlyPublisher] MF file bridge ready.\n");
+            std::fprintf(stderr, "[SurevideotoolPublisher] MF file bridge ready.\n");
             std::fflush(stderr);
         }
 
@@ -717,7 +717,7 @@ namespace morphly
             }
             else if (!s_loggedAttachSuccess)
             {
-                std::fprintf(stderr, "[MorphlyPublisher] Global bridge attached successfully.\n");
+                std::fprintf(stderr, "[SurevideotoolPublisher] Global bridge attached successfully.\n");
                 std::fflush(stderr);
                 s_loggedAttachSuccess = true;
             }

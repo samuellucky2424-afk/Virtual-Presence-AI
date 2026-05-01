@@ -2,7 +2,7 @@
 
 #include <unknwn.h>
 
-namespace morphly::virtualcam
+namespace surevideotool::virtualcam
 {
     bool CanUnloadMfModule() noexcept;
     HRESULT CreateMfClassFactory(REFCLSID classId, REFIID interfaceId, void** object) noexcept;

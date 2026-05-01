@@ -2,7 +2,7 @@
 
 #include <guiddef.h>
 
-namespace morphly
+namespace surevideotool
 {
     extern const GUID kVirtualCameraSourceClsid;
     extern const GUID kWindowsVirtualCameraSourceClsid;

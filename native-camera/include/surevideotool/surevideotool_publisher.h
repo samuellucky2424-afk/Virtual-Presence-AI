@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <windows.h>
 
-namespace morphly
+namespace surevideotool
 {
     struct PublisherConfig
     {

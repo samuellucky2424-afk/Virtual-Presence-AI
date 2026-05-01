@@ -11,12 +11,12 @@ import { createDesktopUpdater } from './updater.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const isDevelopment = !app.isPackaged && process.env.NODE_ENV !== 'production';
-const RELEASES_URL = 'https://github.com/samuellucky2424-afk/morphly/releases';
-const MORPHLY_CAM_WINDOW_NAME = 'Surevideotool Cam';
-const MORPHLY_CAM_WINDOW_WIDTH = 640;
-const MORPHLY_CAM_WINDOW_HEIGHT = 360;
-const VIRTUAL_CAM_PUBLISHER_EXE = 'morphly_cam_pipe_publisher.exe';
-const VIRTUAL_CAM_REGISTRAR_EXE = 'morphly_cam_registrar.exe';
+const RELEASES_URL = 'https://github.com/samuellucky2424-afk/Surevideotool-project/releases';
+const SUREVIDEOTOOL_CAM_WINDOW_NAME = 'Surevideotool Cam';
+const SUREVIDEOTOOL_CAM_WINDOW_WIDTH = 640;
+const SUREVIDEOTOOL_CAM_WINDOW_HEIGHT = 360;
+const VIRTUAL_CAM_PUBLISHER_EXE = 'surevideotool_cam_pipe_publisher.exe';
+const VIRTUAL_CAM_REGISTRAR_EXE = 'surevideotool_cam_registrar.exe';
 const VIRTUAL_CAM_REGISTRAR_TIMEOUT_MS = 120000;
 const VIRTUAL_CAM_WINDOWS_PROBE_TIMEOUT_MS = 15000;
 const VIRTUAL_CAM_FRIENDLY_NAME = 'Surevideotool G1';
@@ -55,8 +55,8 @@ configureChromiumCachePaths();
 
 let mainWindow = null;
 let desktopUpdater = null;
-let morphlyCamWindow = null;
-let morphlyCamPublisher = null;
+let surevideotoolCamWindow = null;
+let surevideotoolCamPublisher = null;
 let virtualCameraEnabled = process.platform === 'win32';
 
 function formatErrorMessage(error) {
@@ -138,7 +138,7 @@ function convertRgbaToBgra(frameBytes) {
 function getVirtualCameraPublisherCandidates() {
   if (app.isPackaged) {
     return [
-      path.join(process.resourcesPath, 'morphly-cam', VIRTUAL_CAM_PUBLISHER_EXE),
+      path.join(process.resourcesPath, 'surevideotool-cam', VIRTUAL_CAM_PUBLISHER_EXE),
       path.join(process.resourcesPath, VIRTUAL_CAM_PUBLISHER_EXE),
       path.join(path.dirname(process.execPath), VIRTUAL_CAM_PUBLISHER_EXE)
     ];
@@ -159,7 +159,7 @@ function getVirtualCameraPublisherCandidates() {
 function getVirtualCameraRegistrarCandidates() {
   if (app.isPackaged) {
     return [
-      path.join(process.resourcesPath, 'morphly-cam', VIRTUAL_CAM_REGISTRAR_EXE),
+      path.join(process.resourcesPath, 'surevideotool-cam', VIRTUAL_CAM_REGISTRAR_EXE),
       path.join(process.resourcesPath, VIRTUAL_CAM_REGISTRAR_EXE),
       path.join(path.dirname(process.execPath), VIRTUAL_CAM_REGISTRAR_EXE)
     ];
@@ -321,7 +321,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   } else if (!attemptRepair) {
     return {
       success: false,
-      error: 'Surevideotool virtual camera is not registered. Run the installer or morphly_cam_registrar install.',
+      error: 'Surevideotool virtual camera is not registered. Run the installer or surevideotool_cam_registrar install.',
       deviceVisible: false
     };
   }
@@ -338,7 +338,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
     if (!installCurrentUserResult.ok) {
       return {
         success: false,
-        error: 'Unable to register Surevideotool virtual camera. Please run morphly_cam_registrar install as Administrator.',
+        error: 'Unable to register Surevideotool virtual camera. Please run surevideotool_cam_registrar install as Administrator.',
         deviceVisible: false
       };
     }
@@ -511,7 +511,7 @@ async function publishLatestRendererFrame(controller) {
     if (!controller.stopping) {
       const message = formatErrorMessage(error);
       if (message.includes('EPIPE') || message.includes('EOF') || message.includes('not writable')) {
-        stopMorphlyCamPublisher();
+        stopSurevideotoolCamPublisher();
       }
     }
   } finally {
@@ -519,7 +519,7 @@ async function publishLatestRendererFrame(controller) {
   }
 }
 
-function scheduleMorphlyCamPublish(controller, delayMs = 0) {
+function scheduleSurevideotoolCamPublish(controller, delayMs = 0) {
   if (controller.stopping) {
     return;
   }
@@ -530,19 +530,19 @@ function scheduleMorphlyCamPublish(controller, delayMs = 0) {
     void publishLatestRendererFrame(controller).finally(() => {
       if (!controller.stopping) {
         const elapsedMs = Date.now() - startedAt;
-        scheduleMorphlyCamPublish(controller, Math.max(0, VIRTUAL_CAM_FRAME_INTERVAL_MS - elapsedMs));
+        scheduleSurevideotoolCamPublish(controller, Math.max(0, VIRTUAL_CAM_FRAME_INTERVAL_MS - elapsedMs));
       }
     });
   }, delayMs);
 }
 
-function stopMorphlyCamPublisher() {
-  if (!morphlyCamPublisher) {
+function stopSurevideotoolCamPublisher() {
+  if (!surevideotoolCamPublisher) {
     return { success: true, message: 'Virtual camera publisher is already stopped.' };
   }
 
-  const controller = morphlyCamPublisher;
-  morphlyCamPublisher = null;
+  const controller = surevideotoolCamPublisher;
+  surevideotoolCamPublisher = null;
   controller.stopping = true;
 
   if (controller.timer) {
@@ -574,7 +574,7 @@ function stopMorphlyCamPublisher() {
   return { success: true, message: 'Virtual camera publisher stopped.' };
 }
 
-function ensureMorphlyCamPublisher() {
+function ensureSurevideotoolCamPublisher() {
   if (process.platform !== 'win32') {
     return { success: false, error: 'Virtual camera publishing is only supported on Windows.' };
   }
@@ -583,11 +583,11 @@ function ensureMorphlyCamPublisher() {
     return { success: false, error: 'Virtual camera publishing is currently disabled.' };
   }
 
-  if (morphlyCamPublisher && !morphlyCamPublisher.stopping) {
+  if (surevideotoolCamPublisher && !surevideotoolCamPublisher.stopping) {
     return { success: true, message: 'Surevideotool cam output is already being published.' };
   }
 
-  stopMorphlyCamPublisher();
+  stopSurevideotoolCamPublisher();
 
   try {
     const publisherPath = resolveVirtualCameraPublisherPath();
@@ -629,20 +629,20 @@ function ensureMorphlyCamPublisher() {
     child.stdin?.on('error', (error) => {
       if (!controller.stopping) {
         console.error('Virtual camera publisher stdin failed:', error);
-        stopMorphlyCamPublisher();
+        stopSurevideotoolCamPublisher();
       }
     });
 
     child.on('error', (error) => {
       if (!controller.stopping) {
         console.error('Failed to launch the virtual camera publisher:', error);
-        stopMorphlyCamPublisher();
+        stopSurevideotoolCamPublisher();
       }
     });
 
     child.on('exit', (code, signal) => {
-      if (morphlyCamPublisher === controller) {
-        morphlyCamPublisher = null;
+      if (surevideotoolCamPublisher === controller) {
+        surevideotoolCamPublisher = null;
       }
 
       if (!controller.stopping) {
@@ -650,8 +650,8 @@ function ensureMorphlyCamPublisher() {
       }
     });
 
-    morphlyCamPublisher = controller;
-    scheduleMorphlyCamPublish(controller);
+    surevideotoolCamPublisher = controller;
+    scheduleSurevideotoolCamPublish(controller);
 
     return { success: true, message: `Publishing Surevideotool cam output via ${publisherPath}.` };
   } catch (error) {
@@ -671,7 +671,7 @@ function loadEnvironmentVariables() {
 }
 
 function resolveUpdateManifestUrl() {
-  return process.env.MORPHLY_UPDATE_MANIFEST_URL
+  return process.env.SUREVIDEOTOOL_UPDATE_MANIFEST_URL
     || process.env.VITE_UPDATE_MANIFEST_URL
     || 'https://surevideotool-project.vercel.app/api/version';
 }
@@ -748,15 +748,15 @@ function buildLoadFailureHtml(failedUrl, errorCode, errorDescription) {
 </html>`;
 }
 
-function isMorphlyCamPopup(details) {
-  return details.frameName === MORPHLY_CAM_WINDOW_NAME;
+function isSurevideotoolCamPopup(details) {
+  return details.frameName === SUREVIDEOTOOL_CAM_WINDOW_NAME;
 }
 
-function createMorphlyCamWindowOptions() {
+function createSurevideotoolCamWindowOptions() {
   return {
-    title: MORPHLY_CAM_WINDOW_NAME,
-    width: MORPHLY_CAM_WINDOW_WIDTH,
-    height: MORPHLY_CAM_WINDOW_HEIGHT,
+    title: SUREVIDEOTOOL_CAM_WINDOW_NAME,
+    width: SUREVIDEOTOOL_CAM_WINDOW_WIDTH,
+    height: SUREVIDEOTOOL_CAM_WINDOW_HEIGHT,
     minWidth: 360,
     minHeight: 220,
     backgroundColor: '#000000',
@@ -787,9 +787,9 @@ function keepWindowVisibleOnTop(window) {
   }
 }
 
-function configureMorphlyCamPopup(window) {
+function configureSurevideotoolCamPopup(window) {
   keepWindowVisibleOnTop(window);
-  window.setTitle(MORPHLY_CAM_WINDOW_NAME);
+  window.setTitle(SUREVIDEOTOOL_CAM_WINDOW_NAME);
   window.webContents.setFrameRate(30);
 
   window.on('show', () => {
@@ -805,12 +805,12 @@ function configureMorphlyCamPopup(window) {
   });
 
   window.on('closed', () => {
-    if (morphlyCamWindow === window) {
-      morphlyCamWindow = null;
+    if (surevideotoolCamWindow === window) {
+      surevideotoolCamWindow = null;
     }
   });
 
-  const startResult = ensureMorphlyCamPublisher();
+  const startResult = ensureSurevideotoolCamPublisher();
   if (!startResult.success) {
     console.error('Surevideotool cam virtual camera bridge did not start:', startResult.error ?? startResult.message);
   }
@@ -837,19 +837,19 @@ function createWindow() {
   Menu.setApplicationMenu(null);
   mainWindow.setMenuBarVisibility(false);
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    if (isMorphlyCamPopup(details)) {
+    if (isSurevideotoolCamPopup(details)) {
       return {
         action: 'allow',
-        overrideBrowserWindowOptions: createMorphlyCamWindowOptions()
+        overrideBrowserWindowOptions: createSurevideotoolCamWindowOptions()
       };
     }
 
     return { action: 'allow' };
   });
   mainWindow.webContents.on('did-create-window', (window, details) => {
-    if (isMorphlyCamPopup(details)) {
-      morphlyCamWindow = window;
-      configureMorphlyCamPopup(window);
+    if (isSurevideotoolCamPopup(details)) {
+      surevideotoolCamWindow = window;
+      configureSurevideotoolCamPopup(window);
     }
   });
 
@@ -869,7 +869,7 @@ function createWindow() {
       return;
     }
 
-    const startResult = ensureMorphlyCamPublisher();
+    const startResult = ensureSurevideotoolCamPublisher();
     if (!startResult.success) {
       console.error('Main-window virtual camera bridge did not start:', startResult.error ?? startResult.message);
     }
@@ -892,12 +892,12 @@ function registerVirtualCameraHandlers() {
       return registrationResult;
     }
 
-    return ensureMorphlyCamPublisher();
+    return ensureSurevideotoolCamPublisher();
   });
 
   ipcMain.handle('virtual-camera:stop', async () => {
     virtualCameraEnabled = false;
-    return stopMorphlyCamPublisher();
+    return stopSurevideotoolCamPublisher();
   });
 
   ipcMain.on('virtual-camera:push-frame', (event, payload) => {
@@ -906,11 +906,11 @@ function registerVirtualCameraHandlers() {
       return;
     }
 
-    if (!morphlyCamPublisher || morphlyCamPublisher.stopping) {
+    if (!surevideotoolCamPublisher || surevideotoolCamPublisher.stopping) {
       return;
     }
 
-    updateRendererFrame(morphlyCamPublisher, payload);
+    updateRendererFrame(surevideotoolCamPublisher, payload);
   });
 }
 
@@ -987,7 +987,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  stopMorphlyCamPublisher();
+  stopSurevideotoolCamPublisher();
 
   if (desktopUpdater) {
     desktopUpdater.dispose();

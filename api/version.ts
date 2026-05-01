@@ -14,7 +14,7 @@ async function fetchLatestVersion() {
   const response = await fetch(GITHUB_API_LATEST, {
     headers: {
       'Accept': 'application/vnd.github+json',
-      'User-Agent': 'morphly-updater',
+      'User-Agent': 'surevideotool-updater',
       'X-GitHub-Api-Version': '2022-11-28',
     },
     cache: 'no-store',

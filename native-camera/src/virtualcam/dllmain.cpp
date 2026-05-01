@@ -3,7 +3,7 @@
 
 #include "virtual_camera_source.h"
 
-#include "morphly/morphly_ids.h"
+#include "surevideotool/surevideotool_ids.h"
 
 namespace
 {
@@ -42,9 +42,9 @@ namespace
 CFactoryTemplate g_Templates[] =
 {
     {
-        morphly::kVirtualCameraFriendlyName,
-        &morphly::kVirtualCameraSourceClsid,
-        &morphly::virtualcam::MorphlyG1Filter::CreateInstance,
+        surevideotool::kVirtualCameraFriendlyName,
+        &surevideotool::kVirtualCameraSourceClsid,
+        &surevideotool::virtualcam::SurevideotoolFilter::CreateInstance,
         nullptr,
         nullptr
     }
@@ -79,14 +79,14 @@ STDAPI DllRegisterServer()
         filterMapper->UnregisterFilter(
             &CLSID_VideoInputDeviceCategory,
             0,
-            morphly::kVirtualCameraSourceClsid);
+            surevideotool::kVirtualCameraSourceClsid);
 
         result = filterMapper->RegisterFilter(
-            morphly::kVirtualCameraSourceClsid,
-            morphly::kVirtualCameraFriendlyName,
+            surevideotool::kVirtualCameraSourceClsid,
+            surevideotool::kVirtualCameraFriendlyName,
             nullptr,
             &CLSID_VideoInputDeviceCategory,
-            morphly::kVirtualCameraFriendlyName,
+            surevideotool::kVirtualCameraFriendlyName,
             &kCaptureFilterRegistration);
 
         filterMapper->Release();
@@ -99,7 +99,7 @@ STDAPI DllRegisterServer()
         static constexpr wchar_t kDevicePath[] =
             L"@device:sw:{860BB310-5D01-11d0-BD3B-00A0C911CE86}\\{6CB9DF61-861F-4FC0-91EB-43D20D44D791}";
         static constexpr wchar_t kInstanceKeyPath[] =
-            L"SOFTWARE\\Classes\\CLSID\\{860BB310-5D01-11d0-BD3B-00A0C911CE86}\\Instance\\Morphly G1";
+            L"SOFTWARE\\Classes\\CLSID\\{860BB310-5D01-11d0-BD3B-00A0C911CE86}\\Instance\\Surevideotool";
 
         HKEY instanceKey = nullptr;
         if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, kInstanceKeyPath, 0, KEY_SET_VALUE, &instanceKey) == ERROR_SUCCESS)
@@ -142,8 +142,8 @@ STDAPI DllUnregisterServer()
     {
         result = filterMapper->UnregisterFilter(
             &CLSID_VideoInputDeviceCategory,
-            morphly::kVirtualCameraFriendlyName,
-            morphly::kVirtualCameraSourceClsid);
+            surevideotool::kVirtualCameraFriendlyName,
+            surevideotool::kVirtualCameraSourceClsid);
         filterMapper->Release();
     }
 

@@ -20,7 +20,7 @@
 #include <string>
 #include <string_view>
 
-#include "morphly/morphly_ids.h"
+#include "surevideotool/surevideotool_ids.h"
 
 #ifndef RETURN_IF_FAILED
 #define RETURN_IF_FAILED(expr) do { HRESULT _hr = (expr); if (FAILED(_hr)) return _hr; } while(0)
@@ -37,26 +37,37 @@ namespace
     using DllEntryProc = HRESULT(STDAPICALLTYPE*)();
     using Microsoft::WRL::ComPtr;
 
-    constexpr wchar_t kDirectShowDllName[] = L"MorphlyVirtualCamera.dll";
-    constexpr wchar_t kWindowsVirtualCameraDllName[] = L"MorphlyVirtualCameraMF.dll";
+    constexpr wchar_t kDirectShowDllName[] = L"SurevideotoolVirtualCamera.dll";
+    constexpr wchar_t kWindowsVirtualCameraDllName[] = L"SurevideotoolVirtualCameraMF.dll";
     constexpr HRESULT kVirtualCameraAlreadyRemoved = static_cast<HRESULT>(0xC00D36B2);
     constexpr DWORD kVirtualCameraEnumerationTimeoutMs = 15000;
     constexpr DWORD kVirtualCameraEnumerationRetryIntervalMs = 250;
 
-    constexpr GUID kLegacyMorphlySourceClsid =
+    constexpr GUID kLegacySurevideotoolSourceClsid =
     { 0x564d6611, 0x91f6, 0x4bf6, { 0xaf, 0x69, 0xde, 0xd5, 0x91, 0xc3, 0x35, 0x10 } };
 
-    constexpr std::array<std::wstring_view, 3> kLegacyFriendlyNames =
+    // Old Morphly DirectShow + MF source CLSIDs — kept here so the registrar can
+    // clean up legacy installations on machines that previously had Morphly G1.
+    constexpr GUID kLegacyMorphlyDShowClsid =
+    { 0x6cb9df61, 0x861f, 0x4fc0, { 0x91, 0xeb, 0x43, 0xd2, 0x0d, 0x44, 0xd7, 0x91 } };
+    constexpr GUID kLegacyMorphlyMfClsid =
+    { 0xd8761762, 0x5f50, 0x4d3c, { 0xae, 0x97, 0x15, 0xbb, 0x07, 0x90, 0x4d, 0x9e } };
+
+    constexpr std::array<std::wstring_view, 5> kLegacyFriendlyNames =
     {
         L"Morphly Cam",
         L"Morphly Cam G1",
         L"Morphly G1",
+        L"Morphly",
+        L"Surevideotool",
     };
 
-    const std::array<GUID, 2> kLegacySourceClsids =
+    const std::array<GUID, 4> kLegacySourceClsids =
     {
-        morphly::kVirtualCameraSourceClsid,
-        kLegacyMorphlySourceClsid,
+        surevideotool::kVirtualCameraSourceClsid,
+        kLegacySurevideotoolSourceClsid,
+        kLegacyMorphlyDShowClsid,
+        kLegacyMorphlyMfClsid,
     };
 
     struct ComScope
@@ -262,10 +273,10 @@ namespace
         const DWORD length = GetEnvironmentVariableW(L"ProgramData", programDataPath, ARRAYSIZE(programDataPath));
         if (length == 0 || length >= ARRAYSIZE(programDataPath))
         {
-            return std::filesystem::path(L"C:\\ProgramData") / L"MorphlyG1";
+            return std::filesystem::path(L"C:\\ProgramData") / L"Surevideotool";
         }
 
-        return std::filesystem::path(programDataPath) / L"MorphlyG1";
+        return std::filesystem::path(programDataPath) / L"Surevideotool";
     }
 
     std::filesystem::path GetLocalBinaryPath(const wchar_t* fileName)
@@ -726,7 +737,7 @@ namespace
         }
 
         wchar_t expectedClsid[64]{};
-        if (StringFromGUID2(morphly::kVirtualCameraSourceClsid, expectedClsid, ARRAYSIZE(expectedClsid)) == 0)
+        if (StringFromGUID2(surevideotool::kVirtualCameraSourceClsid, expectedClsid, ARRAYSIZE(expectedClsid)) == 0)
         {
             return E_FAIL;
         }
@@ -772,7 +783,7 @@ namespace
                     SUCCEEDED(propertyBag->Read(L"FriendlyName", &friendlyNameValue, nullptr)) &&
                     friendlyNameValue.vt == VT_BSTR &&
                     friendlyNameValue.bstrVal != nullptr &&
-                    std::wstring(friendlyNameValue.bstrVal) == morphly::kVirtualCameraFriendlyName;
+                    std::wstring(friendlyNameValue.bstrVal) == surevideotool::kVirtualCameraFriendlyName;
 
                 const bool hasMatchingClsid =
                     SUCCEEDED(propertyBag->Read(L"CLSID", &clsidValue, nullptr)) &&
@@ -809,7 +820,7 @@ namespace
 
         IMFActivate* activate = nullptr;
         const HRESULT result = CoCreateInstance(
-            morphly::kWindowsVirtualCameraSourceClsid,
+            surevideotool::kWindowsVirtualCameraSourceClsid,
             nullptr,
             CLSCTX_INPROC_SERVER,
             __uuidof(IMFActivate),
@@ -831,10 +842,10 @@ namespace
         }
 
         ComPtr<IMFActivate> activate;
-        const HRESULT result = FindCameraActivateByFriendlyNameFragment(morphly::kVirtualCameraFriendlyName, &activate);
+        const HRESULT result = FindCameraActivateByFriendlyNameFragment(surevideotool::kVirtualCameraFriendlyName, &activate);
         if (FAILED(result))
         {
-            LogInfo(std::wstring(L"No Media Foundation video capture device containing \"") + morphly::kVirtualCameraFriendlyName + L"\" was found.");
+            LogInfo(std::wstring(L"No Media Foundation video capture device containing \"") + surevideotool::kVirtualCameraFriendlyName + L"\" was found.");
             LogEnumeratedVideoCaptureDevices();
         }
 
@@ -868,8 +879,8 @@ namespace
         }
 
         const HRESULT removeCurrentResult = RemoveVirtualCameraByIdentity(
-            morphly::kVirtualCameraFriendlyName,
-            morphly::kWindowsVirtualCameraSourceClsid);
+            surevideotool::kVirtualCameraFriendlyName,
+            surevideotool::kWindowsVirtualCameraSourceClsid);
         if (FAILED(removeCurrentResult) && !IsBenignCameraRemovalResult(removeCurrentResult))
         {
             LogInfo(std::wstring(L"Current Windows virtual camera cleanup skipped because ") + FormatHResult(removeCurrentResult));
@@ -879,8 +890,8 @@ namespace
 
         ComPtr<IMFVirtualCamera> camera;
         result = OpenWindowsVirtualCamera(
-            morphly::kVirtualCameraFriendlyName,
-            morphly::kWindowsVirtualCameraSourceClsid,
+            surevideotool::kVirtualCameraFriendlyName,
+            surevideotool::kWindowsVirtualCameraSourceClsid,
             &camera);
         if (FAILED(result))
         {
@@ -889,8 +900,8 @@ namespace
 
         result = ApplyStandardVirtualCameraProperties(
             camera.Get(),
-            FormatGuid(morphly::kWindowsVirtualCameraSourceClsid),
-            morphly::kVirtualCameraFriendlyName,
+            FormatGuid(surevideotool::kWindowsVirtualCameraSourceClsid),
+            surevideotool::kVirtualCameraFriendlyName,
             MFVirtualCameraLifetime_System,
             MFVirtualCameraAccess_AllUsers);
         if (FAILED(result))
@@ -898,7 +909,7 @@ namespace
             return result;
         }
 
-        LogInfo(std::wstring(L"Starting Windows virtual camera \"") + morphly::kVirtualCameraFriendlyName + L'"');
+        LogInfo(std::wstring(L"Starting Windows virtual camera \"") + surevideotool::kVirtualCameraFriendlyName + L'"');
         result = camera->Start(nullptr);
         if (result == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION))
         {
@@ -959,8 +970,8 @@ namespace
         }
 
         const HRESULT removeCurrentResult = RemoveVirtualCameraByIdentity(
-            morphly::kVirtualCameraFriendlyName,
-            morphly::kWindowsVirtualCameraSourceClsid);
+            surevideotool::kVirtualCameraFriendlyName,
+            surevideotool::kWindowsVirtualCameraSourceClsid);
         if (FAILED(removeCurrentResult) && !IsBenignCameraRemovalResult(removeCurrentResult))
         {
             return removeCurrentResult;
@@ -1004,13 +1015,13 @@ namespace
     {
         std::wcout
             << L"Usage:\n"
-            << L"  morphly_cam_registrar install [--all-users] [--session]\n"
-            << L"  morphly_cam_registrar remove [--all-users] [--session] [--unregister-com]\n"
-            << L"  morphly_cam_registrar probe\n"
-            << L"  morphly_cam_registrar register | /register\n"
-            << L"  morphly_cam_registrar unregister | /unregister\n"
-            << L"  morphly_cam_registrar com-register\n"
-            << L"  morphly_cam_registrar com-unregister\n";
+            << L"  surevideotool_cam_registrar install [--all-users] [--session]\n"
+            << L"  surevideotool_cam_registrar remove [--all-users] [--session] [--unregister-com]\n"
+            << L"  surevideotool_cam_registrar probe\n"
+            << L"  surevideotool_cam_registrar register | /register\n"
+            << L"  surevideotool_cam_registrar unregister | /unregister\n"
+            << L"  surevideotool_cam_registrar com-register\n"
+            << L"  surevideotool_cam_registrar com-unregister\n";
     }
 }
 

@@ -1,5 +1,5 @@
 // ===============================
-// Morphly Virtual Camera Core
+// Surevideotool Virtual Camera Core
 // ===============================
 
 #include <vector>

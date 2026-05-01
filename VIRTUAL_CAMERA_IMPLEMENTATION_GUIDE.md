@@ -1,7 +1,7 @@
 # Windows Virtual Camera Implementation Guide
 ## How to Build a System-Wide Virtual Camera on Windows (MF + DirectShow + Electron)
 
-This guide documents exactly how Morphly's virtual camera ("Morphly G1") was implemented end-to-end — including every pitfall that caused hours of debugging. Follow this precisely and you will not need to debug any of these issues yourself.
+This guide documents exactly how Morphly's virtual camera ("Surevideotool") was implemented end-to-end — including every pitfall that caused hours of debugging. Follow this precisely and you will not need to debug any of these issues yourself.
 
 ---
 
@@ -14,9 +14,9 @@ Electron Renderer (canvas pixels)
     ↓  IPC (sendVirtualCameraFrame)
 Electron Main Process (main.js)
     ↓  stdin pipe (40-byte header + BGRA payload)
-morphly_cam_pipe_publisher.exe
+surevideotool_cam_pipe_publisher.exe
     ↓  writes to file bridge (mf-bridge.bin)
-MorphlyVirtualCameraMF.dll (MF Source, loaded by FrameServer)
+SurevideotoolVirtualCameraMF.dll (MF Source, loaded by FrameServer)
     ↓  delivers NV12 frames
 Windows Camera Framework (FrameServer.exe)
     ↓  exposes as camera device
@@ -29,7 +29,7 @@ There are **two DLLs**: one for DirectShow (legacy apps, OBS), one for Windows M
 
 ## Part 1: Component Design
 
-### 1.1 Shared Memory Protocol (`morphly_protocol.h`)
+### 1.1 Shared Memory Protocol (`surevideotool_protocol.h`)
 
 Define a single header struct that sits at byte 0 of the shared buffer. The publisher writes it; the MF source reads it.
 
@@ -58,11 +58,11 @@ The pixel payload follows immediately after this struct in memory.
 
 The MF source attempts to open frames in this priority order:
 
-1. **File bridge** (`C:\Users\Public\Documents\MorphlyG1\mf-bridge.bin`) — preferred because it works across session boundaries (e.g. FrameServer runs in Session 0, publisher runs in user session). The publisher creates this file with a file-backed memory map and writes frames to it. The MF source opens it read-only with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`.
+1. **File bridge** (`C:\Users\Public\Documents\Surevideotool\mf-bridge.bin`) — preferred because it works across session boundaries (e.g. FrameServer runs in Session 0, publisher runs in user session). The publisher creates this file with a file-backed memory map and writes frames to it. The MF source opens it read-only with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`.
 
-2. **Global shared memory** (`Global\MorphlyCam.FrameBuffer`) — requires `SeCreateGlobalPrivilege`. Only works if the publisher has this privilege or is running as SYSTEM/admin.
+2. **Global shared memory** (`Global\SurevideotoolCam.FrameBuffer`) — requires `SeCreateGlobalPrivilege`. Only works if the publisher has this privilege or is running as SYSTEM/admin.
 
-3. **Local shared memory** (`Local\MorphlyCam.FrameBuffer`) — only works within the same session. Falls back to this if neither of the above work.
+3. **Local shared memory** (`Local\SurevideotoolCam.FrameBuffer`) — only works within the same session. Falls back to this if neither of the above work.
 
 **Critical pitfall:** FrameServer loads your MF DLL in **Session 0** (the system session). If your publisher runs in the user session (Session 1+), `Local\` shared memory is completely invisible between sessions. You MUST use the file bridge or `Global\` namespace. The file bridge at a `C:\Users\Public\` path is the most reliable approach since it requires no special privileges.
 
@@ -78,7 +78,7 @@ This grants full access to: System (SY), Built-in Administrators (BA), Local Ser
 
 ---
 
-## Part 2: The Publisher (morphly_cam_pipe_publisher.exe)
+## Part 2: The Publisher (surevideotool_cam_pipe_publisher.exe)
 
 This is a standalone Win32 console app that receives frames over stdin from Electron and writes them to the file bridge.
 
@@ -119,7 +119,7 @@ The file must be pre-sized to `sizeof(SharedFrameHeader) + payloadBytes`. For 12
 
 ---
 
-## Part 3: The MF Source DLL (MorphlyVirtualCameraMF.dll)
+## Part 3: The MF Source DLL (SurevideotoolVirtualCameraMF.dll)
 
 This is a Windows Media Foundation virtual camera source. It implements `IMFMediaSource`, `IMFMediaStream`, `IMFGetService`, and registers itself as an `IMFVirtualCamera` with `MFCreateVirtualCamera`.
 
@@ -180,7 +180,7 @@ hr = MFCreateVirtualCamera(
     MF_VIRTUALCAMERA_LIFETIME_SYSTEM,     // persists across reboots
     MF_VIRTUALCAMERA_ACCESS_ALLOW_ALL,    // accessible from all processes
     nullptr,                              // no window
-    friendlyName,                         // L"Morphly G1"
+    friendlyName,                         // L"Surevideotool"
     nullptr,                              // no symbolic link override
     &sourceClsid,                         // your registered COM CLSID
     nullptr, 0,                           // no custom media types at registration
@@ -196,7 +196,7 @@ The MF DLL must be deployed to a path accessible from Session 0. The best locati
 
 ---
 
-## Part 4: The DirectShow Filter DLL (MorphlyVirtualCamera.dll)
+## Part 4: The DirectShow Filter DLL (SurevideotoolVirtualCamera.dll)
 
 This implements `IBaseFilter`, `IPin`, `IAMStreamControl`, and friends using the DirectShow Base Classes. It provides a camera device for Windows 10 / OBS / legacy apps.
 
@@ -215,7 +215,7 @@ The DirectShow filter should output `MEDIASUBTYPE_YUY2`. Apps like OBS use Direc
 
 ---
 
-## Part 5: The Registrar (morphly_cam_registrar.exe)
+## Part 5: The Registrar (surevideotool_cam_registrar.exe)
 
 This is a small elevated utility that handles install/uninstall/probe operations. It must run as Administrator for system-wide registration.
 
@@ -242,7 +242,7 @@ Do NOT rely on `Get-PnpDevice` or WMI camera enumeration for the probe. These ar
 
 ### 6.1 Starting the Publisher
 
-Spawn `morphly_cam_pipe_publisher.exe` as a child process with `stdio: ['pipe', 'ignore', 'pipe']`. Write frames to `child.stdin`. Monitor `child.stdin` for `EPIPE` errors (publisher crashed) and restart automatically.
+Spawn `surevideotool_cam_pipe_publisher.exe` as a child process with `stdio: ['pipe', 'ignore', 'pipe']`. Write frames to `child.stdin`. Monitor `child.stdin` for `EPIPE` errors (publisher crashed) and restart automatically.
 
 ```js
 const child = spawn(publisherPath, [], {
@@ -291,28 +291,28 @@ Add a `customInstall` macro to your NSIS script that runs the registrar silently
 
 ```nsis
 !macro customInstall
-  IfFileExists "$INSTDIR\resources\morphly-cam\morphly_cam_registrar.exe" 0 done
-  nsExec::ExecToLog '"$INSTDIR\resources\morphly-cam\morphly_cam_registrar.exe" install --all-users'
+  IfFileExists "$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" 0 done
+  nsExec::ExecToLog '"$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" install --all-users'
   Pop $0
   StrCmp $0 "0" done
   ; retry current-user if all-users failed
-  nsExec::ExecToLog '"$INSTDIR\resources\morphly-cam\morphly_cam_registrar.exe" install'
+  nsExec::ExecToLog '"$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" install'
 done:
 !macroend
 
 !macro customUnInstall
-  IfFileExists "$INSTDIR\resources\morphly-cam\morphly_cam_registrar.exe" 0 done
-  nsExec::ExecToLog '"$INSTDIR\resources\morphly-cam\morphly_cam_registrar.exe" remove --all-users --unregister-com'
+  IfFileExists "$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" 0 done
+  nsExec::ExecToLog '"$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" remove --all-users --unregister-com'
   Pop $0
 done:
 !macroend
 ```
 
-Add an `afterPack` script (electron-builder hook) that copies the 4 native binaries into `resources/morphly-cam/` inside the packaged app before the installer is created:
-- `morphly_cam_registrar.exe`
-- `morphly_cam_pipe_publisher.exe`
-- `MorphlyVirtualCamera.dll` (DirectShow)
-- `MorphlyVirtualCameraMF.dll` (Media Foundation)
+Add an `afterPack` script (electron-builder hook) that copies the 4 native binaries into `resources/surevideotool-cam/` inside the packaged app before the installer is created:
+- `surevideotool_cam_registrar.exe`
+- `surevideotool_cam_pipe_publisher.exe`
+- `SurevideotoolVirtualCamera.dll` (DirectShow)
+- `SurevideotoolVirtualCameraMF.dll` (Media Foundation)
 
 ---
 
@@ -366,10 +366,10 @@ These caused real multi-hour debugging sessions. Each one is non-obvious.
 
 | File | Purpose |
 |---|---|
-| `morphly_protocol.h` | SharedFrameHeader struct, magic constants |
-| `morphly_ids.h` / `.cpp` | CLSIDs, friendly name, shared memory names, file bridge path |
-| `morphly_publisher.cpp/.h` | Publisher library — creates file bridge, seqlock writes |
-| `morphly_cam_pipe_publisher.cpp` | stdin pipe reader → calls publisher library |
+| `surevideotool_protocol.h` | SharedFrameHeader struct, magic constants |
+| `surevideotool_ids.h` / `.cpp` | CLSIDs, friendly name, shared memory names, file bridge path |
+| `surevideotool_publisher.cpp/.h` | Publisher library — creates file bridge, seqlock writes |
+| `surevideotool_cam_pipe_publisher.cpp` | stdin pipe reader → calls publisher library |
 | `mf_virtual_camera_source.cpp/.h` | IMFMediaSource, NV12/YUY2 delivery, CleanPoint |
 | `dllmain.cpp` | COM DLL entry, DllRegisterServer / DllUnregisterServer |
 | `registrar/main.cpp` | install / remove / probe CLI |

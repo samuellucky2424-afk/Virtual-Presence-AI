@@ -23,7 +23,7 @@ export interface ManifestBuildOptions {
 }
 
 export const GITHUB_OWNER = 'samuellucky2424-afk';
-export const GITHUB_REPO = 'morphly';
+export const GITHUB_REPO = 'Surevideotool-project';
 export const GITHUB_REPOSITORY_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 export const GITHUB_RELEASES_URL = `${GITHUB_REPOSITORY_URL}/releases`;
 
@@ -38,8 +38,8 @@ export function normalizeVersion(version: string): string {
 export function buildAssetName(version: string, packageType: UpdatePackageType): string {
   const safeVersion = normalizeVersion(version);
   return packageType === 'portable'
-    ? `Morphly ${safeVersion}.exe`
-    : `Morphly Setup ${safeVersion}.exe`;
+    ? `Surevideotool ${safeVersion}.exe`
+    : `Surevideotool Setup ${safeVersion}.exe`;
 }
 
 export function buildReleasePageUrl(version: string): string {
@@ -72,10 +72,10 @@ function readEnvText(env: NodeJS.ProcessEnv, keys: string[]): string | null {
 }
 
 export function resolveReleaseNotes(env: NodeJS.ProcessEnv = process.env): string | null {
-  const inlineNotes = readEnvText(env, ['MORPHLY_RELEASE_NOTES', 'RELEASE_NOTES']);
+  const inlineNotes = readEnvText(env, ['SUREVIDEOTOOL_RELEASE_NOTES', 'RELEASE_NOTES']);
   if (inlineNotes) return inlineNotes;
 
-  const notesFile = readEnvText(env, ['MORPHLY_RELEASE_NOTES_FILE']);
+  const notesFile = readEnvText(env, ['SUREVIDEOTOOL_RELEASE_NOTES_FILE']);
   if (notesFile) return readTextFileIfExists(path.resolve(notesFile));
 
   return null;
@@ -83,10 +83,10 @@ export function resolveReleaseNotes(env: NodeJS.ProcessEnv = process.env): strin
 
 export function resolveChecksum(packageType: UpdatePackageType, env: NodeJS.ProcessEnv = process.env): string | null {
   const scopedKey = packageType === 'portable'
-    ? ['MORPHLY_UPDATE_SHA256_PORTABLE', 'MORPHLY_UPDATE_CHECKSUM_PORTABLE']
-    : ['MORPHLY_UPDATE_SHA256_INSTALLER', 'MORPHLY_UPDATE_CHECKSUM_INSTALLER'];
+    ? ['SUREVIDEOTOOL_UPDATE_SHA256_PORTABLE', 'SUREVIDEOTOOL_UPDATE_CHECKSUM_PORTABLE']
+    : ['SUREVIDEOTOOL_UPDATE_SHA256_INSTALLER', 'SUREVIDEOTOOL_UPDATE_CHECKSUM_INSTALLER'];
 
-  const generic = readEnvText(env, ['MORPHLY_UPDATE_SHA256', 'MORPHLY_UPDATE_CHECKSUM']);
+  const generic = readEnvText(env, ['SUREVIDEOTOOL_UPDATE_SHA256', 'SUREVIDEOTOOL_UPDATE_CHECKSUM']);
   return readEnvText(env, scopedKey) ?? generic;
 }
 
