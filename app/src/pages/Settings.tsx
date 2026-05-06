@@ -444,10 +444,10 @@ function Settings() {
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">
                 <Label className="text-xs font-medium text-white">Email support</Label>
-                <p className="text-[11px] text-[#71717a]">samuellucky2424@gmail.com</p>
+                <p className="text-[11px] text-[#71717a]">Cyrilreed4@gmail.com</p>
               </div>
               <Button
-                onClick={() => { window.open('mailto:samuellucky2424@gmail.com', '_blank'); }}
+                onClick={() => { window.open('mailto:Cyrilreed4@gmail.com', '_blank'); }}
                 variant="outline"
                 className="h-8 rounded-md border-[#27272a] bg-transparent px-3 text-xs text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
               >
@@ -458,10 +458,10 @@ function Settings() {
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">
                 <Label className="text-xs font-medium text-white">WhatsApp</Label>
-                <p className="text-[11px] text-[#71717a]">+234 703 819 5038</p>
+                <p className="text-[11px] text-[#71717a]">08101494660</p>
               </div>
               <Button
-                onClick={() => { window.open('https://wa.me/2347038195038', '_blank'); }}
+                onClick={() => { window.open('https://wa.me/2348101494660', '_blank'); }}
                 variant="outline"
                 className="h-8 rounded-md border-[#27272a] bg-transparent px-3 text-xs text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
               >

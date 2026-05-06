@@ -9,10 +9,10 @@ interface RouteGuardProps {
 }
 
 export function ProtectedRoute({ children, redirectTo }: RouteGuardProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, adminLoading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || (isAuthenticated && adminLoading)) {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -31,6 +31,10 @@ export function ProtectedRoute({ children, redirectTo }: RouteGuardProps) {
         replace 
       />
     );
+  }
+
+  if (isAdmin) {
+    return <Navigate to={ROUTES.PROTECTED.ADMIN} replace />;
   }
 
   return <>{children}</>;
