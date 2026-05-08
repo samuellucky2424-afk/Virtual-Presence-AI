@@ -71,26 +71,58 @@ async function readRawBody(req) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-function hasValidPaymentPointSignature(rawBody, signature, secretKey) {
-  if (!rawBody || !signature || !secretKey) {
+function normalizeSignatureValue(signature) {
+  const raw = String(signature || '').trim();
+  if (!raw) {
+    return null;
+  }
+
+  const parts = raw.split(',');
+  const versioned = parts
+    .map((part) => part.trim())
+    .find((part) => /^v\d+=/i.test(part));
+
+  const value = versioned || raw;
+  return value
+    .replace(/^sha256=/i, '')
+    .replace(/^v\d+=/i, '')
+    .trim()
+    .toLowerCase();
+}
+
+function buildPaymentPointSignatureCandidates(rawBody, secretKeys) {
+  const bodyBuffer = Buffer.from(String(rawBody || ''), 'utf8');
+  const keys = secretKeys.map((key) => String(key || '').trim()).filter(Boolean);
+  const candidates = new Set();
+
+  for (const key of keys) {
+    const hmac = crypto.createHmac('sha256', key).update(bodyBuffer);
+    const digest = hmac.digest();
+    candidates.add(digest.toString('hex').toLowerCase());
+    candidates.add(digest.toString('base64').toLowerCase());
+  }
+
+  return [...candidates];
+}
+
+function timingSafeStringEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left), 'utf8');
+  const rightBuffer = Buffer.from(String(right), 'utf8');
+  if (leftBuffer.length !== rightBuffer.length) {
     return false;
   }
 
-  const expected = crypto
-    .createHmac('sha256', secretKey)
-    .update(rawBody)
-    .digest('hex');
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
 
-  const normalizedExpected = expected.toLowerCase();
-  const normalizedSignature = String(signature).trim().toLowerCase();
-  if (normalizedExpected.length !== normalizedSignature.length) {
+function hasValidPaymentPointSignature(rawBody, signature, secretKeys) {
+  const normalizedSignature = normalizeSignatureValue(signature);
+  if (!rawBody || !normalizedSignature || !Array.isArray(secretKeys) || secretKeys.length === 0) {
     return false;
   }
 
-  return crypto.timingSafeEqual(
-    Buffer.from(normalizedExpected, 'utf8'),
-    Buffer.from(normalizedSignature, 'utf8'),
-  );
+  return buildPaymentPointSignatureCandidates(rawBody, secretKeys)
+    .some((candidate) => timingSafeStringEqual(candidate, normalizedSignature));
 }
 
 export default async function handler(req, res) {
@@ -110,12 +142,16 @@ export default async function handler(req, res) {
     return res.status(503).json({ status: 'failed', message: supabaseAdminConfigError });
   }
 
-  const paymentPointSecretKey =
-    process.env.PAYMENTPOINT_SECRET_KEY ||
-    process.env.PAYMENTPOINT_WEBHOOK_SECRET ||
-    process.env.PAYMENTPOINT_SECURITY_KEY;
+  const paymentPointSignatureKeySources = [
+    { name: 'PAYMENTPOINT_WEBHOOK_SECRET', value: process.env.PAYMENTPOINT_WEBHOOK_SECRET },
+    { name: 'PAYMENTPOINT_SECURITY_KEY', value: process.env.PAYMENTPOINT_SECURITY_KEY },
+    { name: 'PAYMENTPOINT_SECRET_KEY', value: process.env.PAYMENTPOINT_SECRET_KEY },
+    { name: 'PAYMENTPOINT_API_KEY', value: process.env.PAYMENTPOINT_API_KEY },
+    { name: 'PAYMENTPOINT_BUSINESS_ID', value: process.env.PAYMENTPOINT_BUSINESS_ID },
+  ].filter((source) => source.value);
+  const paymentPointSignatureKeys = paymentPointSignatureKeySources.map((source) => source.value);
 
-  if (!paymentPointSecretKey) {
+  if (paymentPointSignatureKeys.length === 0) {
     await logPaymentActivity(supabaseAdmin, {
       event: 'paymentpoint_webhook_missing_secret',
       severity: 'error',
@@ -142,7 +178,7 @@ export default async function handler(req, res) {
       },
     });
 
-    if (!hasValidPaymentPointSignature(rawBody, signature.value, paymentPointSecretKey)) {
+    if (!hasValidPaymentPointSignature(rawBody, signature.value, paymentPointSignatureKeys)) {
       logPayment({ event: 'paymentpoint-webhook-invalid-signature', scope: 'root-api' });
       await logPaymentActivity(supabaseAdmin, {
         event: 'paymentpoint_webhook_rejected_invalid_signature',
@@ -157,6 +193,8 @@ export default async function handler(req, res) {
           signatureHeaderName: signature.headerName,
           signaturePresent: Boolean(signature.value),
           signatureSha256: signature.value ? sha256(signature.value).slice(0, 16) : null,
+          signatureKeySourcesTried: paymentPointSignatureKeySources.map((source) => source.name),
+          signatureFormatsTried: ['hex', 'base64'],
           acceptedSignatureHeaders: [
             'paymentpoint-signature',
             'x-paymentpoint-signature',

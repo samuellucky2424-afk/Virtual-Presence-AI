@@ -118,7 +118,7 @@ export default async function handler(req, res) {
               end_time: new Date(),
               status: 'ended',
               seconds_used: sessionPlan.billableSeconds,
-              cost: sessionPlan.chargedCredits,
+              credits_used: sessionPlan.chargedCredits,
             })
             .eq('id', sessionPlan.id)
             .eq('status', 'active'),
@@ -180,7 +180,7 @@ export default async function handler(req, res) {
         user_id: userId,
         status: 'active',
         start_time: new Date(),
-        cost: 0,
+        credits_used: 0,
         seconds_used: 0,
       }).select('id').single();
 
