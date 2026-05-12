@@ -103,7 +103,7 @@ export async function applyVerifiedFlutterwavePayment({ reference, userId, credi
 
   const { data: walletData } = await supabaseAdmin
     .from('wallets')
-    .select('balance, credits')
+    .select('credits')
     .eq('user_id', userId)
     .single();
 

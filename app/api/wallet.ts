@@ -20,31 +20,11 @@ export default async function handler(req, res) {
   if (!userId) return res.status(400).json({ error: 'User ID is required' });
 
   try {
-    // Schema variants: some deployments only have wallets.credits, others have
-    // both balance + credits. Try the rich query first, fall back to credits-only
-    // so a missing column doesn't crash the dashboard's wallet sync.
-    let wallet: { balance?: number; credits?: number } | null = null;
-    let walletErr: any = null;
-
-    {
-      const r = await supabaseAdmin
-        .from('wallets')
-        .select('balance, credits')
-        .eq('user_id', userId)
-        .maybeSingle();
-      wallet = r.data;
-      walletErr = r.error;
-    }
-
-    if (walletErr && /column .*balance/i.test(String(walletErr.message))) {
-      const r = await supabaseAdmin
-        .from('wallets')
-        .select('credits')
-        .eq('user_id', userId)
-        .maybeSingle();
-      wallet = r.data;
-      walletErr = r.error;
-    }
+    const { data: wallet, error: walletErr } = await supabaseAdmin
+      .from('wallets')
+      .select('credits')
+      .eq('user_id', userId)
+      .maybeSingle();
 
     if (walletErr) {
       console.error('[api/wallet] supabase wallets query failed:', walletErr);
@@ -77,7 +57,7 @@ export default async function handler(req, res) {
     }));
 
     return res.json({
-      balance: wallet?.balance ?? 0,
+      balance: 0,
       credits: wallet?.credits ?? 0,
       transactions: mappedTxs,
     });

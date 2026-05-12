@@ -20,7 +20,15 @@ export default async function handler(req, res) {
   if (!userId) return res.status(400).json({ error: 'User ID is required' });
 
   try {
-    let { data: wallet } = await supabaseAdmin.from('wallets').select('balance, credits').eq('user_id', userId).single();
+    const { data: wallet, error: walletError } = await supabaseAdmin
+      .from('wallets')
+      .select('credits')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (walletError) {
+      return res.status(500).json({ error: walletError.message || 'wallet query failed' });
+    }
+
     let { data: txs } = await supabaseAdmin.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
     
     // Map DB columns to our frontend transaction structure
@@ -34,7 +42,7 @@ export default async function handler(req, res) {
     }));
     
     res.json({
-      balance: wallet?.balance || 0,
+      balance: 0,
       credits: wallet?.credits || 0,
       transactions: mappedTxs
     });

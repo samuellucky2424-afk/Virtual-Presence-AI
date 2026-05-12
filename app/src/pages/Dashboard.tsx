@@ -1807,45 +1807,44 @@ function Dashboard() {
 
     setIsLoading(true);
     setConnectionState('connecting');
-    setUiStatus('Connecting...');
+    setUiStatus('Preparing camera...');
     setRuntimeModeCap('hd');
     resetHealthCounters();
 
-    // Arm the virtual camera publisher. The live frames come from the main
-    // Morphly output stream; the popup, if opened, is only an optional mirror.
-    surevideotoolCamWindowEnabledRef.current = true;
-    const virtualCameraStartPromise = window.electron
-      ? window.electron.invoke('virtual-camera:start').catch((err: unknown) => {
-          console.warn('Failed to arm virtual camera publisher:', err);
-          return {
+    try {
+      // The virtual camera must be ready before we create a backend/Decart session.
+      // Otherwise users can be charged upstream while the camera output cannot be used.
+      surevideotoolCamWindowEnabledRef.current = true;
+      const virtualCameraStartResult = window.electron
+        ? await window.electron.invoke('virtual-camera:start').catch((err: unknown) => ({
             success: false,
             error: err instanceof Error ? err.message : 'Unknown virtual camera error',
-          };
-        })
-      : Promise.resolve(null);
+          }))
+        : null;
 
-    try {
-      const [virtualCameraStartResult, startResponse, stream] = await Promise.all([
-        virtualCameraStartPromise,
-        apiRequest<{
-          allowed: boolean;
-          token?: string;
-          error?: string;
-          credits?: number;
-          maxSeconds?: number;
-          sessionId?: string;
-        }>('/start-session', {
-          method: 'POST',
-          body: JSON.stringify({ userId: user?.id }),
-        }),
-        startWebcam(activeMode, { forceNewStream: true }),
-      ]);
-
-      if (virtualCameraStartResult && virtualCameraStartResult.success === false) {
+      if (virtualCameraStartResult?.success === false) {
         const virtualCameraMessage = virtualCameraStartResult.error || virtualCameraStartResult.message || 'Surevideotool virtual camera is unavailable';
         console.warn('Surevideotool virtual camera is unavailable:', virtualCameraMessage);
-        toast.error(virtualCameraMessage);
+        throw new Error(virtualCameraMessage);
       }
+
+      const stream = await startWebcam(activeMode, { forceNewStream: true });
+      if (!stream) {
+        throw new Error('Webcam start failed');
+      }
+
+      setUiStatus('Connecting...');
+      const startResponse = await apiRequest<{
+        allowed: boolean;
+        token?: string;
+        error?: string;
+        credits?: number;
+        maxSeconds?: number;
+        sessionId?: string;
+      }>('/start-session', {
+        method: 'POST',
+        body: JSON.stringify({ userId: user?.id }),
+      });
 
       if (!startResponse.allowed) {
         toast.error(startResponse.error || 'Insufficient credits');
@@ -1861,10 +1860,6 @@ function Dashboard() {
       }
 
       const sessionToken = startResponse.token || '';
-
-      if (!stream) {
-        throw new Error('Webcam start failed');
-      }
 
       if (!sessionToken) {
         throw new Error('Missing session token');
@@ -1892,9 +1887,7 @@ function Dashboard() {
       setSessionStatus('LIVE');
       setUiStatus('Live');
 
-      if (!virtualCameraStartResult || virtualCameraStartResult.success !== false) {
-        toast.success('Surevideotool camera is live. Select "Surevideotool" in WhatsApp, Zoom, or OBS.');
-      }
+      toast.success('Surevideotool camera is live. Select "Surevideotool" in WhatsApp, Zoom, or OBS.');
     } catch (error) {
       console.error('Start session error:', error);
       const toastMessage = getStartSessionErrorToast(error);
@@ -1912,7 +1905,7 @@ function Dashboard() {
       }
 
       sessionTokenRef.current = '';
-  stopVirtualCameraPublisher();
+      stopVirtualCameraPublisher();
       stopWebcam();
       disconnectFromDecart();
       closeSurevideotoolCamWindow({ clearStream: true });
