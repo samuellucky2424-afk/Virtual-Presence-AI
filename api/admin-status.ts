@@ -67,7 +67,7 @@ export default async function handler(req, res) {
       const { data: adminEmailRow, error: adminEmailError } = await supabaseAdmin
         .from('kadmins')
         .select('user_id,email')
-        .eq('email', user.email)
+        .ilike('email', user.email)
         .maybeSingle();
 
       if (adminEmailError) {

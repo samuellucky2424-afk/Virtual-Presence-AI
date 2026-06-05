@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: adminEmailRow, error: adminEmailError } = await supabase
           .from(DB_TABLES.admins)
           .select('user_id')
-          .eq('email', userEmail)
+          .ilike('email', userEmail)
           .maybeSingle();
 
         if (adminEmailError) {
