@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabaseAdmin, supabaseAdminConfigError } from '../shared/supabase-admin.js';
+import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -29,7 +29,18 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: walletError.message || 'wallet query failed' });
     }
 
-    let { data: txs } = await supabaseAdmin.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+    const { data: transactionsData, error: transactionsError } = await supabaseAdmin
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (transactionsError) {
+      console.error('[api/wallet] transactions query failed:', transactionsError);
+      return res.status(500).json({ error: transactionsError.message || 'transactions query failed' });
+    }
+    const txs = transactionsData;
     
     // Map DB columns to our frontend transaction structure
     const mappedTxs = (txs || []).map(tx => ({
@@ -47,6 +58,7 @@ export default async function handler(req, res) {
       transactions: mappedTxs
     });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[api/wallet] unexpected error:', error);
+    res.status(500).json({ error: error?.message || 'Internal server error' });
   }
 }
