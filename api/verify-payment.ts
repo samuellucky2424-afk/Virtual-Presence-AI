@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
+import { supabaseAdmin, supabaseAdminConfigError } from '../shared/supabase-admin.js';
 import {
   applyVerifiedPaystackPayment,
   getPaystackPaymentContext,

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
+import { supabaseAdmin, supabaseAdminConfigError } from '../shared/supabase-admin.js';
 import { logPaymentActivity } from '../shared/payment-activity-log.js';
 
 const CREDITS_PER_SECOND = 2;
