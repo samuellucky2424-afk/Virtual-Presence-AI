@@ -1,11 +1,66 @@
 <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="244" fill="#0C56D7" />
-  <circle cx="256" cy="238" r="214" fill="#0E61E8" opacity="0.28" />
-  <path d="M165 151C145 151 129 167 129 187V305C129 326 145 342 165 342H193L236 392C246 403 264 403 274 392L417 227C430 212 428 189 413 176C398 163 376 165 363 180L284 272L193 167C186 157 176 151 165 151Z" fill="#22DCE8" />
-  <path d="M177 164C159 164 145 178 145 196V298C145 316 159 330 177 330H202L241 375C247 382 258 382 264 375L403 216C413 204 412 186 400 176C388 166 370 167 360 179L283 269L201 176C194 168 186 164 177 164Z" fill="#F8FBFF" />
-  <path d="M220 218C220 211 227 207 233 211L282 240C288 244 288 252 282 256L233 285C227 289 220 285 220 278V218Z" fill="#0C56D7" />
-  <path d="M274 347C314 319 347 286 377 247C401 216 423 186 464 168C438 199 418 230 390 260C360 293 325 323 286 351Z" fill="#E8FDFF" />
-  <path d="M374 146C389 146 404 154 412 166C395 170 381 181 369 197C368 177 371 160 374 146Z" fill="#25DDE9" />
-  <path d="M438 176C451 176 464 183 471 194C455 198 441 208 430 221C429 204 432 189 438 176Z" fill="#25DDE9" />
-  <path d="M402 232C414 232 426 239 432 249C417 253 405 262 395 275C394 260 397 245 402 232Z" fill="#25DDE9" />
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="47%" r="58%">
+      <stop offset="0" stop-color="#102B3F"/>
+      <stop offset="0.55" stop-color="#06131E"/>
+      <stop offset="1" stop-color="#020508"/>
+    </radialGradient>
+    <linearGradient id="steel" x1="108" y1="118" x2="398" y2="381" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FCFF"/>
+      <stop offset="0.24" stop-color="#9FB2C3"/>
+      <stop offset="0.48" stop-color="#344252"/>
+      <stop offset="0.72" stop-color="#DDE7EF"/>
+      <stop offset="1" stop-color="#657686"/>
+    </linearGradient>
+    <linearGradient id="darkSteel" x1="159" y1="151" x2="354" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2D3A49"/>
+      <stop offset="0.56" stop-color="#07111C"/>
+      <stop offset="1" stop-color="#586979"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="201" y1="106" x2="310" y2="386" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#83F6FF"/>
+      <stop offset="0.52" stop-color="#0EDBFF"/>
+      <stop offset="1" stop-color="#0077FF"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.78 0 0 0 0 1 0 0 0 0.85 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="256" cy="258" r="214" stroke="#0EA5E9" stroke-opacity="0.22" stroke-width="8"/>
+  <circle cx="256" cy="258" r="164" stroke="#35E8FF" stroke-opacity="0.18" stroke-width="3"/>
+
+  <g opacity="0.5" stroke="#17DFFF" stroke-width="4" stroke-linecap="round" filter="url(#glow)">
+    <path d="M142 141v-30m34 42v-48m160 48v-48m34 36v-30"/>
+    <path d="M104 214H72m368 0h-32M116 296H82m348 0h-34"/>
+    <path d="M126 166l-20-20m280 20l20-20M126 345l-20 20m280-20l20 20"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <path d="M132 218 54 167l31 101 84 45 18-56-55-39Z" fill="url(#darkSteel)" stroke="#C9D8E4" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M380 218 458 167l-31 101-84 45-18-56 55-39Z" fill="url(#darkSteel)" stroke="#C9D8E4" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M151 166 96 114l17 86 78 47 19-52-59-29Z" fill="url(#steel)" stroke="#E7F3FA" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M361 166 416 114l-17 86-78 47-19-52 59-29Z" fill="url(#steel)" stroke="#E7F3FA" stroke-width="7" stroke-linejoin="round"/>
+
+    <path d="M256 74 287 150l-31 36-31-36 31-76Z" fill="url(#cyan)" stroke="#E7FBFF" stroke-width="7" stroke-linejoin="round" filter="url(#glow)"/>
+    <path d="M163 168 204 118l52 34 52-34 41 50-26 55H189l-26-55Z" fill="url(#darkSteel)" stroke="#D7E5F0" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M189 223h134l42 58-65 105h-88l-65-105 42-58Z" fill="#07111A" stroke="#C9D8E4" stroke-width="8" stroke-linejoin="round"/>
+
+    <path d="M183 196 225 221l-19 36-58-22 35-39Z" fill="url(#steel)" stroke="#EAF6FC" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M329 196 287 221l19 36 58-22-35-39Z" fill="url(#steel)" stroke="#EAF6FC" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M210 264h92l-17 72h-58l-17-72Z" fill="#EEF6FA" stroke="#8DA1B1" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M229 264v72M256 264v72M283 264v72" stroke="#172432" stroke-width="8" stroke-linecap="round"/>
+
+    <path d="M190 239c24-12 48-12 72 0-29 31-55 31-72 0Z" fill="url(#cyan)" filter="url(#glow)"/>
+    <path d="M322 239c-24-12-48-12-72 0 29 31 55 31 72 0Z" fill="url(#cyan)" filter="url(#glow)"/>
+  </g>
+
+  <text x="256" y="447" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="61" font-weight="900" letter-spacing="4" fill="#EAF6FC" stroke="#52677A" stroke-width="3">TLM</text>
+  <text x="256" y="477" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="800" letter-spacing="7" fill="#4EEBFF">MEDIA</text>
 </svg>
