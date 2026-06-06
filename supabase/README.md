@@ -100,32 +100,17 @@ Returns current session status and remaining credits.
 }
 ```
 
-### `POST /api/verify-payment`
-Verifies a Flutterwave payment and adds credits.
-
-**Body:**
-```json
-{
-  "reference": "<flutterwave_tx_ref>",
-  "transactionId": 1234567,
-  "userId": "<uuid>",
-  "credits": 1000,
-  "priceUSD": 20
-}
-```
-
-### `POST /api/flutterwave-webhook`
-Receives Flutterwave webhook events, validates the webhook signature, re-verifies the transaction with Flutterwave, and adds credits idempotently.
+### `POST /api/paystack-webhook`
+Receives Paystack webhook events, validates the Paystack signature, re-verifies the transaction with Paystack, and adds credits idempotently.
 
 **Required server env vars:**
 ```env
-FLUTTERWAVE_SECRET_KEY=your_flutterwave_secret_key_here
-FLUTTERWAVE_WEBHOOK_SECRET_HASH=your_flutterwave_webhook_secret_hash_here
+PAYSTACK_SECRET_KEY=your_paystack_secret_key_here
 ```
 
-**Flutterwave dashboard webhook URL:**
+**Paystack dashboard webhook URL:**
 ```text
-https://<your-vercel-domain>/api/flutterwave-webhook
+https://<your-vercel-domain>/api/paystack-webhook
 ```
 
 **Response:**

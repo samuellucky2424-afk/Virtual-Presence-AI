@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       email: auth.user.email || email,
       amountNGN: plan.amountNGN,
       reference,
-      callbackUrl: origin ? `${origin}/#/subscription?reference=${encodeURIComponent(reference)}` : null,
+      callbackUrl: origin ? `${origin}/#/subscription` : null,
       metadata: {
         provider: 'paystack',
         app: 'techlordmedia',

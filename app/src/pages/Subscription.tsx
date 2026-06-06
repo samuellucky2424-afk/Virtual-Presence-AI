@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, Coins, Copy, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Coins, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api-client';
 import { CREDITS_PER_SECOND } from '@/lib/billing';
@@ -145,16 +144,6 @@ function formatTime(credits: number): string {
   return `~${remainingSeconds}s`;
 }
 
-function getPaystackReferenceFromLocation(): string {
-  if (typeof window === 'undefined') return '';
-
-  const directReference = new URLSearchParams(window.location.search).get('reference');
-  if (directReference) return directReference;
-
-  const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-  return new URLSearchParams(hashQuery).get('reference') || '';
-}
-
 async function getAccessToken(): Promise<string | null> {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token || null;
@@ -163,23 +152,13 @@ async function getAccessToken(): Promise<string | null> {
 function Subscription() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { setCredits } = useApp();
   const [creditPlans, setCreditPlans] = useState<CreditPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<CreditPlan | null>(null);
   const [checkout, setCheckout] = useState<PaystackCheckout | null>(null);
-  const [paymentReference, setPaymentReference] = useState('');
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const reference = getPaystackReferenceFromLocation();
-    if (reference) {
-      setPaymentReference(reference);
-    }
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -243,81 +222,6 @@ function Subscription() {
     };
   }, []);
 
-  const currentReference = useMemo(
-    () => paymentReference || checkout?.reference || '',
-    [checkout?.reference, paymentReference],
-  );
-
-  const verifyPaystackPayment = useCallback(async (referenceOverride?: string) => {
-    const referenceToVerify = referenceOverride || currentReference;
-
-    if (!referenceToVerify) {
-      toast.error('Start a Paystack checkout first.');
-      return false;
-    }
-
-    if (!user?.id) {
-      toast.error('Please log in before verifying payment.');
-      return false;
-    }
-
-    setIsCheckingPayment(true);
-    setPaymentError(null);
-
-    try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        throw new Error('Please log in again before verifying payment.');
-      }
-
-      const response = await apiFetch('/verify-payment', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          provider: 'paystack',
-          reference: referenceToVerify,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (response.status === 202 || data?.status === 'pending') {
-        toast.info(data?.message || 'Payment is still pending. Please try again shortly.');
-        return false;
-      }
-
-      if (!response.ok || data?.status !== 'success') {
-        throw new Error(data?.message || `Paystack returned HTTP ${response.status}`);
-      }
-
-      const creditsAdded = Number(data?.creditsAdded || 0);
-      if (creditsAdded > 0) {
-        toast.success(`Payment verified. ${creditsAdded.toLocaleString()} credits added.`);
-      } else {
-        toast.success(data?.message || 'Payment already processed.');
-      }
-
-      const nextCredits = Number(data?.newCredits);
-      if (Number.isFinite(nextCredits)) {
-        setCredits(nextCredits);
-        toast.info(`Wallet balance: ${nextCredits.toLocaleString()} credits.`);
-      }
-
-      return true;
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : 'Unable to verify Paystack payment right now';
-      setPaymentError(message);
-      toast.error(message);
-      return false;
-    } finally {
-      setIsCheckingPayment(false);
-    }
-  }, [currentReference, setCredits, user?.id]);
-
   const openPaystackInlineCheckout = useCallback(async (nextCheckout: PaystackCheckout) => {
     if (!nextCheckout.accessCode) {
       throw new Error('Paystack checkout access code is missing.');
@@ -330,11 +234,8 @@ function Subscription() {
       onLoad: () => {
         toast.success('Paystack checkout loaded.');
       },
-      onSuccess: (transaction) => {
-        const reference = transaction?.reference || nextCheckout.reference;
-        setPaymentReference(reference);
-        toast.success('Payment completed. Verifying credits...');
-        void verifyPaystackPayment(reference);
+      onSuccess: () => {
+        toast.success('Payment completed. Waiting for Paystack webhook to update your credits.');
       },
       onCancel: () => {
         toast.info('Paystack checkout closed.');
@@ -345,28 +246,12 @@ function Subscription() {
         toast.error(message);
       },
     });
-  }, [verifyPaystackPayment]);
+  }, []);
 
   const handleSelectPlan = (plan: CreditPlan) => {
     setSelectedPlan(plan);
     setCheckout(null);
-    setPaymentReference('');
     setPaymentError(null);
-  };
-
-  const copyPaymentReference = async () => {
-    if (!currentReference) {
-      toast.error('Start a Paystack checkout first.');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(currentReference);
-      toast.success('Payment reference copied.');
-    } catch (error) {
-      console.error(error);
-      toast.error('Unable to copy payment reference.');
-    }
   };
 
   const handleProceedToPayment = async () => {
@@ -422,7 +307,6 @@ function Subscription() {
       };
 
       setCheckout(nextCheckout);
-      setPaymentReference(data.reference);
 
       await openPaystackInlineCheckout(nextCheckout);
     } catch (error) {
@@ -433,10 +317,6 @@ function Subscription() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleVerifyPaystackPayment = async () => {
-    await verifyPaystackPayment();
   };
 
   return (
@@ -546,24 +426,13 @@ function Subscription() {
           <ul className="text-sm text-[#a1a1aa] space-y-1">
             <li>- Select a credit plan and complete Paystack checkout inside the app</li>
             <li>- Complete the payment using any method Paystack shows</li>
-            <li>- Credits are verified automatically after a successful payment</li>
+            <li>- Credits are added automatically by the Paystack webhook after payment succeeds</li>
           </ul>
 
           {user?.email && (
             <p className="text-xs text-blue-300 mt-4">
               Payment email for this session: {user.email}
             </p>
-          )}
-
-          {currentReference && (
-            <div className="mt-4 rounded-xl border border-[#27272a] bg-[#0f0f10] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[#71717a] mb-2">Paystack reference</p>
-              <p className="break-all text-sm font-semibold text-white">{currentReference}</p>
-              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-300">
-                <CheckCircle2 className="w-4 h-4" />
-                Checkout created. Complete payment before verification.
-              </div>
-            </div>
           )}
 
           {paymentError && (
@@ -593,27 +462,6 @@ function Subscription() {
               </Button>
             )}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleVerifyPaystackPayment}
-              disabled={!currentReference || isCheckingPayment}
-              className="border-[#3f3f46] bg-transparent text-white hover:bg-[#1a1a1f]"
-            >
-              {isCheckingPayment ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Verify Payment
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={copyPaymentReference}
-              disabled={!currentReference}
-              className="border-[#3f3f46] bg-transparent text-white hover:bg-[#1a1a1f]"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy Reference
-            </Button>
           </div>
         </div>
 
@@ -633,18 +481,6 @@ function Subscription() {
               <span className="text-xs text-[#71717a] mt-1">{selectedPlan.name} - {formatTime(selectedPlan.credits)} estimated time</span>
             </div>
             <div className="flex items-center gap-3">
-              {currentReference && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleVerifyPaystackPayment}
-                  disabled={isCheckingPayment}
-                  className="h-12 px-6 border-[#3f3f46] bg-transparent text-white hover:bg-[#1a1a1f]"
-                >
-                  {isCheckingPayment ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Verify
-                </Button>
-              )}
               <Button
                 onClick={handleProceedToPayment}
                 disabled={isProcessing}
