@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
+import { requireSupabaseUser } from '../../shared/paystack-payment.js';
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -20,6 +21,14 @@ export default async function handler(req, res) {
   if (!userId) return res.status(400).json({ error: 'User ID is required' });
 
   try {
+    const auth = await requireSupabaseUser(supabaseAdmin, req);
+    if (!auth.ok) {
+      return res.status(auth.statusCode).json({ error: auth.message });
+    }
+    if (auth.user.id !== userId) {
+      return res.status(403).json({ error: 'Wallet user does not match the current session' });
+    }
+
     const { data: wallet, error: walletErr } = await supabaseAdmin
       .from('wallets')
       .select('credits')

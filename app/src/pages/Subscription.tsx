@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, apiFetchWithAuth } from '@/lib/api-client';
 import { CREDITS_PER_SECOND } from '@/lib/billing';
 import { DB_TABLES } from '@/lib/dbNames';
 import { formatNaira, resolveStoredPlanPriceNGN } from '@/lib/pricing';
@@ -235,7 +235,7 @@ function Subscription() {
       await wait(attempt === 0 ? 1500 : 4000);
 
       try {
-        const response = await apiFetch(`/wallet?userId=${user.id}`);
+        const response = await apiFetchWithAuth(`/wallet?userId=${user.id}`);
         if (!response.ok) continue;
 
         const data = await response.json().catch(() => null);

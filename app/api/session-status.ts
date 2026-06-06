@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
+import { requireSupabaseUser } from '../../shared/paystack-payment.js';
 
 const CREDITS_PER_SECOND = 2;
 const MAX_BILLABLE_SECONDS = 7200;
@@ -35,6 +36,14 @@ export default async function handler(req, res) {
   try {
     if (!supabaseAdmin) {
       return res.status(503).json({ error: supabaseAdminConfigError || 'Supabase admin is not configured' });
+    }
+
+    const auth = await requireSupabaseUser(supabaseAdmin, req);
+    if (!auth.ok) {
+      return res.status(auth.statusCode).json({ error: auth.message });
+    }
+    if (auth.user.id !== userId) {
+      return res.status(403).json({ error: 'Session user does not match the current session' });
     }
 
     const [walletResult, activeSessionResult] = await Promise.all([

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetchWithAuth } from '@/lib/api-client';
 import { useAuth } from './AuthContext';
 
 export interface Transaction {
@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const res = await apiFetch(`/wallet?userId=${user.id}`);
+      const res = await apiFetchWithAuth(`/wallet?userId=${user.id}`);
       if (!res.ok) {
         const rawBody = await res.text();
         let apiError = rawBody;

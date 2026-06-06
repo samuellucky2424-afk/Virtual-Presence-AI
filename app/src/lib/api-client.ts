@@ -1,3 +1,5 @@
+import { supabase } from '@/lib/supabase';
+
 const DEPLOYED_APP_ORIGIN = 'https://techlordmedia.vercel.app';
 const LOCAL_API_BASE = '/api';
 
@@ -41,4 +43,19 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
   const normalizedPath = withLeadingSlash(path);
   const apiBase = getApiBase();
   return fetch(`${apiBase}${normalizedPath}`, init);
+}
+
+export async function apiFetchWithAuth(path: string, init?: RequestInit): Promise<Response> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const headers = new Headers(init?.headers);
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return apiFetch(path, {
+    ...init,
+    headers,
+  });
 }

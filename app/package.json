@@ -40,15 +40,10 @@
     ],
     "extraResources": [
       {
-        "from": ".env",
-        "to": "."
-      },
-      {
         "from": "build/icon.ico",
         "to": "icon.ico"
       }
     ],
-    "afterPack": "build/afterPack.cjs",
     "win": {
       "target": [
         "nsis",
@@ -65,7 +60,6 @@
     },
     "nsis": {
       "artifactName": "Tech Lord Media Setup ${version}.${ext}",
-      "include": "build/installer.nsh",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
@@ -139,7 +133,6 @@
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "uuid": "^9.0.0",
     "vaul": "^1.1.2",
     "zod": "^4.3.5"
   },

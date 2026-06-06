@@ -14,7 +14,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useApp } from '@/context/AppContext';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetchWithAuth } from '@/lib/api-client';
 import { CREDITS_PER_SECOND } from '@/lib/billing';
 import { UpdateBanner } from '@/components/UpdateBanner';
 import {
@@ -124,6 +124,7 @@ The output must remain photorealistic and indistinguishable from a normal live c
 Never produce a cartoon, anime, illustration, painting, CGI, 3D render, beauty filter, or stylized look.`;
 const DEFAULT_ENHANCE = false;
 const POLLING_INTERVAL = 5000; // poll session-status every 5 s for live credit display
+const ENABLE_CAPTURE_WINDOW = import.meta.env.VITE_ENABLE_CAPTURE_WINDOW === 'true';
 const TRANSFORM_SYNC_DEBOUNCE_MS = 180;
 const AUTO_DOWNGRADE_SAMPLES = 3;
 const AUTO_UPGRADE_SAMPLES = 10;
@@ -278,7 +279,7 @@ function getNavigatorConnection(): NetworkInformationLike | null {
 }
 
 async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await apiFetch(endpoint, {
+  const response = await apiFetchWithAuth(endpoint, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -893,7 +894,9 @@ function Dashboard() {
       playOutput();
     }
 
-    syncSurevideotoolCamStream(stream, statusMessage);
+    if (ENABLE_CAPTURE_WINDOW) {
+      syncSurevideotoolCamStream(stream, statusMessage);
+    }
   }, [markRemoteFrameFresh, startRemoteFrameMonitor, syncSurevideotoolCamStream]);
 
   const stopWebcam = useCallback(() => {
@@ -1817,21 +1820,7 @@ function Dashboard() {
     resetHealthCounters();
 
     try {
-      // The virtual camera must be ready before we create a backend/Decart session.
-      // Otherwise users can be charged upstream while the camera output cannot be used.
-      surevideotoolCamWindowEnabledRef.current = true;
-      const virtualCameraStartResult = window.electron
-        ? await window.electron.invoke('virtual-camera:start').catch((err: unknown) => ({
-            success: false,
-            error: err instanceof Error ? err.message : 'Unknown virtual camera error',
-          }))
-        : null;
-
-      if (virtualCameraStartResult?.success === false) {
-        const virtualCameraMessage = virtualCameraStartResult.error || virtualCameraStartResult.message || 'Tech Lord Media virtual camera is unavailable';
-        console.warn('Tech Lord Media virtual camera is unavailable:', virtualCameraMessage);
-        throw new Error(virtualCameraMessage);
-      }
+      surevideotoolCamWindowEnabledRef.current = ENABLE_CAPTURE_WINDOW;
 
       const stream = await startWebcam(activeMode, { forceNewStream: true });
       if (!stream) {
@@ -1892,7 +1881,7 @@ function Dashboard() {
       setSessionStatus('LIVE');
       setUiStatus('Live');
 
-      toast.success('Tech Lord Media camera is live. Select "Tech Lord Media" in WhatsApp, Zoom, or OBS.');
+      toast.success('Tech Lord Media is live.');
     } catch (error) {
       console.error('Start session error:', error);
       const toastMessage = getStartSessionErrorToast(error);

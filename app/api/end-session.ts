@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
 import { logPaymentActivity } from '../../shared/payment-activity-log.js';
+import { requireSupabaseUser } from '../../shared/paystack-payment.js';
 
 const CREDITS_PER_SECOND = 2;
 // Hard ceiling: one session can never bill more than 2 hours,
@@ -92,6 +93,14 @@ export default async function handler(req, res) {
 
     const { userId, sessionId } = req.body;
     if (!userId || !sessionId) return res.status(400).json({ success: false, message: 'User ID and session ID are required' });
+
+    const auth = await requireSupabaseUser(supabaseAdmin, req);
+    if (!auth.ok) {
+      return res.status(auth.statusCode).json({ success: false, message: auth.message });
+    }
+    if (auth.user.id !== userId) {
+      return res.status(403).json({ success: false, message: 'Session user does not match the current session' });
+    }
 
     await logPaymentActivity(supabaseAdmin, {
       event: 'session_end_requested',

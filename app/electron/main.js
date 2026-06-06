@@ -74,7 +74,7 @@ let mainWindow = null;
 let desktopUpdater = null;
 let surevideotoolCamWindow = null;
 let surevideotoolCamPublisher = null;
-let virtualCameraEnabled = process.platform === 'win32';
+let virtualCameraEnabled = false;
 let virtualCameraPowerSaveBlockerId = null;
 
 function formatErrorMessage(error) {
@@ -1140,16 +1140,9 @@ function createWindow() {
 
 function registerVirtualCameraHandlers() {
   ipcMain.handle('virtual-camera:start', async () => {
-    virtualCameraEnabled = true;
-    appendVirtualCameraLogLine('[info] virtual-camera:start invoked.');
-
-    const registrationResult = ensureVirtualCameraRegistration({ attemptRepair: true });
-    if (!registrationResult.success) {
-      logVirtualCameraEvent('error', 'Virtual camera registration failed during start.', registrationResult);
-      return registrationResult;
-    }
-
-    return ensureSurevideotoolCamPublisher();
+    virtualCameraEnabled = false;
+    appendVirtualCameraLogLine('[info] virtual-camera:start ignored because virtual camera is not included in this build.');
+    return { success: false, error: 'Virtual camera is not included in this Tech Lord Media build.' };
   });
 
   ipcMain.handle('virtual-camera:stop', async () => {

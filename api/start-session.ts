@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
+import { requireSupabaseUser } from './paystack.js';
 
 const CREDITS_PER_SECOND = 2;
 const MAX_BILLABLE_SECONDS = 7200;
@@ -138,6 +139,14 @@ export default async function handler(req, res) {
 
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ allowed: false, error: 'User ID is required' });
+
+    const auth = await requireSupabaseUser(supabaseAdmin, req);
+    if (!auth.ok) {
+      return res.status(auth.statusCode).json({ allowed: false, error: auth.message });
+    }
+    if (auth.user.id !== userId) {
+      return res.status(403).json({ allowed: false, error: 'Session user does not match the current session' });
+    }
 
     await logPaymentActivity(supabaseAdmin, {
       event: 'session_start_requested',
