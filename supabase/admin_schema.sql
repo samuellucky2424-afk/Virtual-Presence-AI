@@ -384,17 +384,18 @@ $$;
 GRANT EXECUTE ON FUNCTION public.admin_stats() TO authenticated;
 
 -- -----------------------------------------------------------------------------
--- 8. SEED THE ADMIN — Cyrilreed4@gmail.com
+-- 8. SEED THE ADMIN
+--    Replace admin@example.com below with the admin email for this deployment.
 --    NOTE: First create the auth user via Supabase dashboard:
 --      Authentication → Users → Add user
---        email:    Cyrilreed4@gmail.com
---        password: Secure1234
+--        email:    admin@example.com
+--        password: Use a strong password
 --        Auto Confirm: YES
 --    Then run this block (it picks up the auth user by email).
 -- -----------------------------------------------------------------------------
 INSERT INTO public.admins (user_id, email)
 SELECT id, email FROM auth.users
-WHERE LOWER(email) = LOWER('Cyrilreed4@gmail.com')
+WHERE LOWER(email) = LOWER('admin@example.com')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- =============================================================================

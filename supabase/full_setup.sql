@@ -4,9 +4,10 @@
 -- Idempotent: safe to re-run.
 --
 -- BEFORE RUNNING:
+--   Replace admin@example.com below with the admin email for this deployment.
 --   1) Authentication → Users → "Add user"
---        email:    Cyrilreed4@gmail.com
---        password: Secure1234
+--        email:    admin@example.com
+--        password: Use a strong password
 --        Auto Confirm: YES
 --   2) Then run this whole file. The seed at the bottom will promote that
 --      auth user into the admins table by email lookup.
@@ -535,10 +536,10 @@ LEFT JOIN public.wallets w ON w.user_id = u.id
 WHERE w.user_id IS NULL;
 
 -- 7.4 Promote the admin account by email lookup
---      (You must have created the auth user Cyrilreed4@gmail.com first.)
+--      (You must have created the auth user for your admin email first.)
 INSERT INTO public.admins (user_id, email)
 SELECT id, email FROM auth.users
-WHERE LOWER(email) = LOWER('Cyrilreed4@gmail.com')
+WHERE LOWER(email) = LOWER('admin@example.com')
 ON CONFLICT (user_id) DO NOTHING;
 
 -- =============================================================================

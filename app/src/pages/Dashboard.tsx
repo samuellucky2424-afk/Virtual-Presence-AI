@@ -359,6 +359,8 @@ function Dashboard() {
   const mainVirtualCamCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mainVirtualCamRenderHandleRef = useRef<number | null>(null);
   const mainVirtualCamLastFrameSentAtRef = useRef(0);
+  const virtualCameraPublisherStartedRef = useRef(false);
+  const virtualCameraStartInFlightRef = useRef<Promise<void> | null>(null);
 
   const promptRef = useRef(prompt);
   const referenceImageRef = useRef(referenceImage);
@@ -457,6 +459,40 @@ function Dashboard() {
 
     status.textContent = message;
     status.style.opacity = '1';
+  }, []);
+
+  const startVirtualCameraPublisher = useCallback(() => {
+    if (!window.electron || virtualCameraPublisherStartedRef.current || virtualCameraStartInFlightRef.current) {
+      return;
+    }
+
+    const startPromise = window.electron.invoke('virtual-camera:start')
+      .then((result: { success?: boolean; error?: string } | undefined) => {
+        if (!result?.success) {
+          virtualCameraPublisherStartedRef.current = false;
+          console.warn('Failed to start Tech Lord Media virtual camera:', result?.error ?? 'Unknown error');
+          if (result?.error) {
+            toast.error(result.error);
+          }
+          return;
+        }
+
+        if (!surevideotoolCamWindowEnabledRef.current) {
+          return;
+        }
+
+        virtualCameraPublisherStartedRef.current = true;
+      })
+      .catch((err: unknown) => {
+        virtualCameraPublisherStartedRef.current = false;
+        console.warn('Failed to start Tech Lord Media virtual camera:', err);
+        toast.error('Unable to start Tech Lord Media virtual camera.');
+      })
+      .finally(() => {
+        virtualCameraStartInFlightRef.current = null;
+      });
+
+    virtualCameraStartInFlightRef.current = startPromise;
   }, []);
 
   const stopSurevideotoolCamRenderLoop = useCallback(() => {
@@ -756,6 +792,7 @@ function Dashboard() {
       return;
     }
 
+    startVirtualCameraPublisher();
     startMainVirtualCamRenderLoop();
 
     const popup = ensureSurevideotoolCamWindow(statusMessage ?? 'Preparing Tech Lord Media cam...');
@@ -786,7 +823,7 @@ function Dashboard() {
       updateSurevideotoolCamStatus(null);
       updateSurevideotoolCamPlaceholder(null);
     }
-  }, [ensureSurevideotoolCamWindow, startMainVirtualCamRenderLoop, startSurevideotoolCamRenderLoop, updateSurevideotoolCamPlaceholder, updateSurevideotoolCamStatus]);
+  }, [ensureSurevideotoolCamWindow, startMainVirtualCamRenderLoop, startSurevideotoolCamRenderLoop, startVirtualCameraPublisher, updateSurevideotoolCamPlaceholder, updateSurevideotoolCamStatus]);
 
   const closeSurevideotoolCamWindow = useCallback((options?: { clearStream?: boolean }) => {
     if (options?.clearStream) {
@@ -917,6 +954,8 @@ function Dashboard() {
 
   const stopVirtualCameraPublisher = useCallback(() => {
     surevideotoolCamWindowEnabledRef.current = false;
+    virtualCameraPublisherStartedRef.current = false;
+    virtualCameraStartInFlightRef.current = null;
 
     if (window.electron) {
       void window.electron.invoke('virtual-camera:stop').catch((err: unknown) => {

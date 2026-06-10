@@ -58,7 +58,7 @@ The pixel payload follows immediately after this struct in memory.
 
 The MF source attempts to open frames in this priority order:
 
-1. **File bridge** (`C:\Users\Public\Documents\Surevideotool\mf-bridge.bin`) — preferred because it works across session boundaries (e.g. FrameServer runs in Session 0, publisher runs in user session). The publisher creates this file with a file-backed memory map and writes frames to it. The MF source opens it read-only with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`.
+1. **File bridge** (`C:\Users\Public\Documents\Tech Lord Media\mf-bridge.bin`) — preferred because it works across session boundaries (e.g. FrameServer runs in Session 0, publisher runs in user session). The publisher creates this file with a file-backed memory map and writes frames to it. The MF source opens it read-only with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`.
 
 2. **Global shared memory** (`Global\SurevideotoolCam.FrameBuffer`) — requires `SeCreateGlobalPrivilege`. Only works if the publisher has this privilege or is running as SYSTEM/admin.
 

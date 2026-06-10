@@ -8,13 +8,13 @@ namespace surevideotool
     const GUID kWindowsVirtualCameraSourceClsid =
     { 0xe75cc3b2, 0x232f, 0x4fd5, { 0xaf, 0x67, 0xb3, 0xab, 0xb0, 0x11, 0xc2, 0x98 } };
 
-    const wchar_t* const kVirtualCameraFriendlyName = L"Surevideotool";
+    const wchar_t* const kVirtualCameraFriendlyName = L"Tech Lord Media";
     const wchar_t* const kPublisherMappingName = L"Local\\SurevideotoolCam.FrameBuffer";
     const wchar_t* const kPublisherMutexName = L"Local\\SurevideotoolCam.FrameMutex";
     const wchar_t* const kPublisherEventName = L"Local\\SurevideotoolCam.FrameEvent";
     const wchar_t* const kGlobalPublisherMappingName = L"Global\\SurevideotoolCam.FrameBuffer";
     const wchar_t* const kGlobalPublisherMutexName = L"Global\\SurevideotoolCam.FrameMutex";
     const wchar_t* const kGlobalPublisherEventName = L"Global\\SurevideotoolCam.FrameEvent";
-    const wchar_t* const kMfPublisherBridgeDirectoryPath = L"C:\\Users\\Public\\Documents\\Surevideotool";
-    const wchar_t* const kMfPublisherBridgeFilePath = L"C:\\Users\\Public\\Documents\\Surevideotool\\mf-bridge.bin";
+    const wchar_t* const kMfPublisherBridgeDirectoryPath = L"C:\\Users\\Public\\Documents\\Tech Lord Media";
+    const wchar_t* const kMfPublisherBridgeFilePath = L"C:\\Users\\Public\\Documents\\Tech Lord Media\\mf-bridge.bin";
 }

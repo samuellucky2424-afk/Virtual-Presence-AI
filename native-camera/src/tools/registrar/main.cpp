@@ -61,13 +61,14 @@ namespace
     constexpr GUID kLegacyFormatBoyMfClsid =
     { 0x4f8b2e01, 0x3c7d, 0x4a9f, { 0xb6, 0xe2, 0x8d, 0x1c, 0x5a, 0x3f, 0x9b, 0x7e } };
 
-    constexpr std::array<std::wstring_view, 7> kLegacyFriendlyNames =
+    constexpr std::array<std::wstring_view, 8> kLegacyFriendlyNames =
     {
         L"Morphly Cam",
         L"Morphly Cam G1",
         L"Morphly G1",
         L"Morphly",
         L"Surevideotool",
+        L"Surevideotool G1",
         L"Format-Boy CAM",
         L"Format-Boy",
     };
@@ -285,10 +286,10 @@ namespace
         const DWORD length = GetEnvironmentVariableW(L"ProgramData", programDataPath, ARRAYSIZE(programDataPath));
         if (length == 0 || length >= ARRAYSIZE(programDataPath))
         {
-            return std::filesystem::path(L"C:\\ProgramData") / L"Surevideotool";
+            return std::filesystem::path(L"C:\\ProgramData") / L"Tech Lord Media";
         }
 
-        return std::filesystem::path(programDataPath) / L"Surevideotool";
+        return std::filesystem::path(programDataPath) / L"Tech Lord Media";
     }
 
     std::filesystem::path GetLocalBinaryPath(const wchar_t* fileName)

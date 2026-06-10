@@ -27,7 +27,7 @@ const VIRTUAL_CAM_STAGED_DLLS = [
 ];
 const VIRTUAL_CAM_REGISTRAR_TIMEOUT_MS = 120000;
 const VIRTUAL_CAM_WINDOWS_PROBE_TIMEOUT_MS = 15000;
-const VIRTUAL_CAM_FRIENDLY_NAME = 'Surevideotool G1';
+const VIRTUAL_CAM_FRIENDLY_NAME = 'Tech Lord Media';
 const VIRTUAL_CAM_FRAME_WIDTH = 1280;
 const VIRTUAL_CAM_FRAME_HEIGHT = 720;
 const VIRTUAL_CAM_FRAME_STRIDE = VIRTUAL_CAM_FRAME_WIDTH * 4;
@@ -503,7 +503,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   const binaryStatus = getVirtualCameraStagedBinaryStatus(registrarPath);
   const supportsMfVirtualCamera = supportsWindowsMediaFoundationVirtualCamera();
   if (binaryStatus.needsRepair) {
-    console.warn(`Surevideotool virtual camera staged files need repair: ${binaryStatus.message}`);
+    console.warn(`Tech Lord Media virtual camera staged files need repair: ${binaryStatus.message}`);
     appendVirtualCameraLogLine(`[warn] ${binaryStatus.message}`);
   }
 
@@ -519,13 +519,13 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
     // (repair requires elevation and can be disruptive in a normal user session).
     const visibilityResult = probeWindowsCameraVisibility();
     if (!visibilityResult.visible) {
-      console.warn('Surevideotool virtual camera probe succeeded but Windows PnP visibility check did not find the device. Continuing anyway.');
+      console.warn('Tech Lord Media virtual camera probe succeeded but Windows PnP visibility check did not find the device. Continuing anyway.');
     }
     return {
       success: true,
       message: supportsMfVirtualCamera
-        ? 'Surevideotool virtual camera registration is healthy.'
-        : 'Surevideotool DirectShow virtual camera fallback is healthy on this Windows build.',
+        ? 'Tech Lord Media virtual camera registration is healthy.'
+        : 'Tech Lord Media DirectShow virtual camera fallback is healthy on this Windows build.',
       deviceVisible: visibilityResult.visible
     };
   } else if (!attemptRepair) {
@@ -533,7 +533,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
       success: false,
       error: probeResult.ok
         ? binaryStatus.message
-        : 'Surevideotool virtual camera is not registered. Run the installer or surevideotool_cam_registrar install.',
+        : 'Tech Lord Media virtual camera is not registered. Run the installer or surevideotool_cam_registrar install.',
       deviceVisible: false
     };
   }
@@ -541,7 +541,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   const repairReason = probeResult.ok
     ? binaryStatus.message
     : 'virtual camera probe failed';
-  console.warn(`Surevideotool virtual camera ${repairReason}. Attempting automatic registration repair...`);
+  console.warn(`Tech Lord Media virtual camera ${repairReason}. Attempting automatic registration repair...`);
 
   const installAllUsersResult = runVirtualCameraRegistrar(registrarPath, ['install', '--all-users']);
   if (!installAllUsersResult.ok) {
@@ -550,7 +550,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
     if (!installCurrentUserResult.ok) {
       return {
         success: false,
-        error: 'Unable to register Surevideotool virtual camera. Please run surevideotool_cam_registrar install as Administrator.',
+        error: 'Unable to register Tech Lord Media virtual camera. Please run surevideotool_cam_registrar install as Administrator.',
         deviceVisible: false
       };
     }
@@ -560,14 +560,14 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   if (!reprobeResult.ok) {
     return {
       success: false,
-      error: 'Surevideotool virtual camera still failed probe after repair. Please reinstall Surevideotool.',
+      error: 'Tech Lord Media virtual camera still failed probe after repair. Please reinstall Tech Lord Media.',
       deviceVisible: false
     };
   }
 
   const repairedBinaryStatus = getVirtualCameraStagedBinaryStatus(registrarPath);
   if (repairedBinaryStatus.needsRepair) {
-    const message = `${repairedBinaryStatus.message}. Close WhatsApp and any app using the camera, then run Surevideotool again so the updated camera DLL can be staged.`;
+    const message = `${repairedBinaryStatus.message}. Close WhatsApp and any app using the camera, then run Tech Lord Media again so the updated camera DLL can be staged.`;
     console.error(message);
     appendVirtualCameraLogLine(`[error] ${message}`);
     return {
@@ -579,16 +579,16 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
 
   const visibilityResult = probeWindowsCameraVisibility();
   if (!visibilityResult.visible) {
-    console.warn('Surevideotool virtual camera passed registrar probe after repair, but Windows camera visibility check still failed. Continuing because registration is healthy.');
+    console.warn('Tech Lord Media virtual camera passed registrar probe after repair, but Windows camera visibility check still failed. Continuing because registration is healthy.');
     return {
       success: true,
-      message: 'Surevideotool virtual camera registration repaired successfully, but Windows PnP visibility is still delayed or unavailable.',
-      warning: 'Surevideotool G1 may not appear in some camera pickers immediately even though the driver probe succeeded.',
+      message: 'Tech Lord Media virtual camera registration repaired successfully, but Windows PnP visibility is still delayed or unavailable.',
+      warning: 'Tech Lord Media may not appear in some camera pickers immediately even though the driver probe succeeded.',
       deviceVisible: false
     };
   }
 
-  return { success: true, message: 'Surevideotool virtual camera registration repaired successfully.', deviceVisible: true };
+  return { success: true, message: 'Tech Lord Media virtual camera registration repaired successfully.', deviceVisible: true };
 }
 
 function createVirtualCameraFrameHeader(payloadBytes, timestampHundredsOfNs = getTimestampHundredsOfNs()) {
@@ -1140,9 +1140,25 @@ function createWindow() {
 
 function registerVirtualCameraHandlers() {
   ipcMain.handle('virtual-camera:start', async () => {
-    virtualCameraEnabled = false;
-    appendVirtualCameraLogLine('[info] virtual-camera:start ignored because virtual camera is not included in this build.');
-    return { success: false, error: 'Virtual camera is not included in this Tech Lord Media build.' };
+    const registrationResult = ensureVirtualCameraRegistration({ attemptRepair: true });
+    if (!registrationResult.success) {
+      virtualCameraEnabled = false;
+      return registrationResult;
+    }
+
+    virtualCameraEnabled = true;
+    const startResult = ensureSurevideotoolCamPublisher();
+    if (!startResult.success) {
+      virtualCameraEnabled = false;
+      return startResult;
+    }
+
+    return {
+      success: true,
+      message: startResult.message,
+      warning: registrationResult.warning,
+      deviceVisible: registrationResult.deviceVisible
+    };
   });
 
   ipcMain.handle('virtual-camera:stop', async () => {

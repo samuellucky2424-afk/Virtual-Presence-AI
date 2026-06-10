@@ -1,7 +1,7 @@
 !macro customInstall
   IfFileExists "$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" 0 customInstallDone
 
-  DetailPrint "Installing Surevideotool virtual camera..."
+  DetailPrint "Installing Tech Lord Media virtual camera..."
   nsExec::ExecToLog '"$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" install --all-users'
   Pop $0
 
@@ -11,7 +11,7 @@
   Pop $1
 
   StrCmp $1 "0" customInstallDone
-  MessageBox MB_ICONEXCLAMATION|MB_OK "Surevideotool was installed, but the Surevideotool virtual camera setup failed.$\r$\n$\r$\nAll-users exit code: $0$\r$\nCurrent-user exit code: $1$\r$\n$\r$\nYou can retry manually from:$\r$\n$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe install"
+  MessageBox MB_ICONEXCLAMATION|MB_OK "Tech Lord Media was installed, but the Tech Lord Media virtual camera setup failed.$\r$\n$\r$\nAll-users exit code: $0$\r$\nCurrent-user exit code: $1$\r$\n$\r$\nYou can retry manually from:$\r$\n$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe install"
 
 customInstallDone:
 !macroend
@@ -19,7 +19,7 @@ customInstallDone:
 !macro customUnInstall
   IfFileExists "$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" 0 customUnInstallDone
 
-  DetailPrint "Removing Surevideotool virtual camera..."
+  DetailPrint "Removing Tech Lord Media virtual camera..."
   nsExec::ExecToLog '"$INSTDIR\resources\surevideotool-cam\surevideotool_cam_registrar.exe" remove --all-users --unregister-com'
   Pop $0
 

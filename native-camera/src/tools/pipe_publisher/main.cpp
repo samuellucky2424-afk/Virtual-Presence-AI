@@ -162,7 +162,7 @@ int wmain()
                 {
                     if (!waitingForBridge)
                     {
-                        std::cerr << "Waiting for the Surevideotool virtual camera bridge to become available.\n";
+                        std::cerr << "Waiting for the Tech Lord Media virtual camera bridge to become available.\n";
                         waitingForBridge = true;
                     }
 
@@ -178,7 +178,7 @@ int wmain()
 
             if (waitingForBridge)
             {
-                std::cerr << "Surevideotool virtual camera bridge connected.\n";
+                std::cerr << "Tech Lord Media virtual camera bridge connected.\n";
                 waitingForBridge = false;
             }
         }

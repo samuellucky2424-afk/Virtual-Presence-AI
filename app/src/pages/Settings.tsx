@@ -435,42 +435,6 @@ function Settings() {
           onClose={() => setIsGuideModalOpen(false)}
         />
 
-        <Card className="gap-0 overflow-hidden rounded-md border-[#1f1f23] bg-[#0f0f10] shadow-none">
-          <CardHeader className="border-b border-[#1f1f23] px-4 py-3">
-            <CardTitle className="text-sm font-semibold tracking-tight text-white">Contact &amp; support</CardTitle>
-            <CardDescription className="text-xs text-[#71717a]">Reach out for help or feedback.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <Label className="text-xs font-medium text-white">Email support</Label>
-                <p className="text-[11px] text-[#71717a]">Cyrilreed4@gmail.com</p>
-              </div>
-              <Button
-                onClick={() => { window.open('mailto:Cyrilreed4@gmail.com', '_blank'); }}
-                variant="outline"
-                className="h-8 rounded-md border-[#27272a] bg-transparent px-3 text-xs text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
-              >
-                Send email
-              </Button>
-            </div>
-            <Separator className="bg-[#27272a]" />
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <Label className="text-xs font-medium text-white">WhatsApp</Label>
-                <p className="text-[11px] text-[#71717a]">08101494660</p>
-              </div>
-              <Button
-                onClick={() => { window.open('https://wa.me/2348101494660', '_blank'); }}
-                variant="outline"
-                className="h-8 rounded-md border-[#27272a] bg-transparent px-3 text-xs text-[#a1a1aa] hover:bg-[#27272a] hover:text-white"
-              >
-                Open WhatsApp
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="gap-0 overflow-hidden rounded-md border-red-500/20 bg-[#0f0f10] shadow-none">
           <CardHeader className="border-b border-[#1f1f23] px-4 py-3">
             <CardTitle className="text-sm font-semibold tracking-tight text-white">Danger zone</CardTitle>
