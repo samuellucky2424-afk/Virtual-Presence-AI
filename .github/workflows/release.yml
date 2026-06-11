@@ -28,6 +28,11 @@ jobs:
       working-directory: app
       run: npm ci
 
+    - name: Build native virtual camera
+      working-directory: native-camera
+      shell: pwsh
+      run: .\build.ps1
+
     - name: Prepare release env
       working-directory: app
       shell: pwsh
@@ -167,11 +172,20 @@ jobs:
         $bundledEnvPath = Join-Path $dir "win-unpacked/resources/.env"
         if (Test-Path $bundledEnvPath) { throw "Desktop release should not bundle .env: $bundledEnvPath" }
 
-        $forbiddenArtifacts = Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue |
-          Where-Object { $_.Name -match 'SurevideotoolVirtualCamera|surevideotool_cam|native-camera|installer\.nsh|afterPack' }
+        $virtualCameraDir = Join-Path $dir "win-unpacked/resources/surevideotool-cam"
+        if (!(Test-Path $virtualCameraDir)) { throw "Missing virtual camera resources: $virtualCameraDir" }
 
-        if ($forbiddenArtifacts) {
-          throw "Release contains virtual camera artifacts: $($forbiddenArtifacts.FullName -join ', ')"
+        $requiredVirtualCameraArtifacts = @(
+          "SurevideotoolVirtualCamera.dll",
+          "SurevideotoolVirtualCameraMF.dll",
+          "surevideotool_cam_pipe_publisher.exe",
+          "surevideotool_cam_registrar.exe"
+        )
+        $missingVirtualCameraArtifacts = $requiredVirtualCameraArtifacts |
+          Where-Object { !(Test-Path (Join-Path $virtualCameraDir $_)) }
+
+        if ($missingVirtualCameraArtifacts) {
+          throw "Missing virtual camera artifacts: $($missingVirtualCameraArtifacts -join ', ')"
         }
 
     - name: Publish GitHub release assets
