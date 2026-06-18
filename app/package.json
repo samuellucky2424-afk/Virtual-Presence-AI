@@ -1,12 +1,12 @@
 {
-  "name": "tech-lord-media-desktop",
+  "name": "virtual-presence-ai-desktop",
   "private": true,
   "version": "1.0.17",
-  "description": "Tech Lord Media desktop app.",
-  "author": "Tech Lord Media",
+  "description": "Virtual Presence AI desktop app.",
+  "author": "Virtual Presence AI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/samuellucky2424-afk/techlordmedia.git"
+    "url": "https://github.com/samuellucky2424-afk/Virtual-Presence-AI.git"
   },
   "type": "module",
   "main": "electron/main.js",
@@ -28,8 +28,8 @@
     "electron:release": "npm run icons && npm run clean:build && npm run build:app && electron-builder --win --publish always"
   },
   "build": {
-    "appId": "com.techlordmedia.app",
-    "productName": "Tech Lord Media",
+    "appId": "com.virtualpresenceai.app",
+    "productName": "Virtual Presence AI",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -60,7 +60,7 @@
       "icon": "build/icon.png"
     },
     "nsis": {
-      "artifactName": "Tech Lord Media Setup ${version}.${ext}",
+      "artifactName": "Virtual Presence AI Setup ${version}.${ext}",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
@@ -70,13 +70,13 @@
       "allowToChangeInstallationDirectory": false
     },
     "portable": {
-      "artifactName": "Tech Lord Media ${version}.${ext}"
+      "artifactName": "Virtual Presence AI ${version}.${ext}"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "samuellucky2424-afk",
-        "repo": "techlordmedia",
+        "repo": "Virtual-Presence-AI",
         "releaseType": "release",
         "tagNamePrefix": "v"
       }

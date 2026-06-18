@@ -313,7 +313,7 @@ function Subscription() {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          name: user.name || user.email.split('@')[0] || 'Tech Lord Media User',
+          name: user.name || user.email.split('@')[0] || 'Virtual Presence AI User',
           planId: selectedPlan.id,
         }),
       });

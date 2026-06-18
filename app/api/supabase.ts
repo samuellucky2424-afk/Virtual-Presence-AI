@@ -17,30 +17,30 @@ const rawSupabaseAdmin = (supabaseUrl && supabaseServiceKey)
   : null;
 
 const TABLE_NAMES = {
-  users: 'kusers',
-  wallets: 'kwallets',
-  transactions: 'ktransactions',
-  sessions: 'ksessions',
-  plans: 'kplans',
-  subscriptions: 'ksubscriptions',
-  exchange_rates: 'kexchange_rates',
-  admins: 'kadmins',
-  credit_adjustments: 'kcredit_adjustments',
-  audit_log: 'kaudit_log',
+  users: 'users_vp',
+  wallets: 'wallets_vp',
+  transactions: 'transactions_vp',
+  sessions: 'sessions_vp',
+  plans: 'plans_vp',
+  subscriptions: 'subscriptions_vp',
+  exchange_rates: 'exchange_rates_vp',
+  admins: 'admins_vp',
+  credit_adjustments: 'credit_adjustments_vp',
+  audit_log: 'audit_log_vp',
 };
 
 const RPC_NAMES = {
-  get_user_credits: 'kget_user_credits',
-  deduct_credits: 'kdeduct_credits',
-  add_credits: 'kadd_credits',
-  is_admin: 'kis_admin',
-  is_current_user_admin: 'kis_current_user_admin',
-  admin_list_users: 'kadmin_list_users',
-  admin_set_credits: 'kadmin_set_credits',
-  admin_set_blocked: 'kadmin_set_blocked',
-  admin_upsert_plan: 'kadmin_upsert_plan',
-  admin_delete_plan: 'kadmin_delete_plan',
-  admin_stats: 'kadmin_stats',
+  get_user_credits: 'get_user_credits_vp',
+  deduct_credits: 'deduct_credits_vp',
+  add_credits: 'add_credits_vp',
+  is_admin: 'is_admin_vp',
+  is_current_user_admin: 'is_current_user_admin_vp',
+  admin_list_users: 'admin_list_users_vp',
+  admin_set_credits: 'admin_set_credits_vp',
+  admin_set_blocked: 'admin_set_blocked_vp',
+  admin_upsert_plan: 'admin_upsert_plan_vp',
+  admin_delete_plan: 'admin_delete_plan_vp',
+  admin_stats: 'admin_stats_vp',
 };
 
 function createMappedSupabaseClient(client) {

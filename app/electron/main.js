@@ -13,9 +13,9 @@ import { createDesktopUpdater } from './updater.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const isDevelopment = !app.isPackaged && process.env.NODE_ENV !== 'production';
-const APP_USER_MODEL_ID = 'com.techlordmedia.app';
-const RELEASES_URL = 'https://github.com/samuellucky2424-afk/techlordmedia/releases';
-const SUREVIDEOTOOL_CAM_WINDOW_NAME = 'Tech Lord Media Cam';
+const APP_USER_MODEL_ID = 'com.virtualpresenceai.app';
+const RELEASES_URL = 'https://github.com/samuellucky2424-afk/Virtual-Presence-AI/releases';
+const SUREVIDEOTOOL_CAM_WINDOW_NAME = 'Virtual Presence AI Cam';
 const SUREVIDEOTOOL_CAM_WINDOW_WIDTH = 640;
 const SUREVIDEOTOOL_CAM_WINDOW_HEIGHT = 360;
 const VIRTUAL_CAM_PUBLISHER_EXE = 'surevideotool_cam_pipe_publisher.exe';
@@ -27,7 +27,7 @@ const VIRTUAL_CAM_STAGED_DLLS = [
 ];
 const VIRTUAL_CAM_REGISTRAR_TIMEOUT_MS = 120000;
 const VIRTUAL_CAM_WINDOWS_PROBE_TIMEOUT_MS = 15000;
-const VIRTUAL_CAM_FRIENDLY_NAME = 'Tech Lord Media';
+const VIRTUAL_CAM_FRIENDLY_NAME = 'Virtual Presence AI';
 const VIRTUAL_CAM_FRAME_WIDTH = 1280;
 const VIRTUAL_CAM_FRAME_HEIGHT = 720;
 const VIRTUAL_CAM_FRAME_STRIDE = VIRTUAL_CAM_FRAME_WIDTH * 4;
@@ -43,9 +43,9 @@ const VIRTUAL_CAM_BLACK_SAMPLE_PIXELS = 512;
 const VIRTUAL_CAM_LOG_FILE_NAME = 'virtual-camera.log';
 const VIRTUAL_CAM_STALE_RENDERER_FRAME_MS = 2000;
 const VIRTUAL_CAM_DIAGNOSTIC_FRAME_INTERVAL_MS = 200;
-
+ 
 app.disableHardwareAcceleration();
-app.setName('Tech Lord Media');
+app.setName('Virtual Presence AI');
 if (process.platform === 'win32') {
   app.setAppUserModelId(APP_USER_MODEL_ID);
 }
@@ -372,7 +372,7 @@ function resolveVirtualCameraRegistrarPath() {
 
 function getProgramDataSurevideotoolPath() {
   const programDataPath = process.env.ProgramData || 'C:\\ProgramData';
-  return path.join(programDataPath, 'Tech Lord Media');
+  return path.join(programDataPath, 'Virtual Presence AI');
 }
 
 function getWindowsBuildNumber() {
@@ -570,7 +570,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   const binaryStatus = getVirtualCameraStagedBinaryStatus(registrarPath);
   const supportsMfVirtualCamera = supportsWindowsMediaFoundationVirtualCamera();
   if (binaryStatus.needsRepair) {
-    console.warn(`Tech Lord Media virtual camera staged files need repair: ${binaryStatus.message}`);
+    console.warn(`Virtual Presence AI virtual camera staged files need repair: ${binaryStatus.message}`);
     appendVirtualCameraLogLine(`[warn] ${binaryStatus.message}`);
   }
 
@@ -586,13 +586,13 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
     // (repair requires elevation and can be disruptive in a normal user session).
     const visibilityResult = probeWindowsCameraVisibility();
     if (!visibilityResult.visible) {
-      console.warn('Tech Lord Media virtual camera probe succeeded but Windows PnP visibility check did not find the device. Continuing anyway.');
+      console.warn('Virtual Presence AI virtual camera probe succeeded but Windows PnP visibility check did not find the device. Continuing anyway.');
     }
     return {
       success: true,
       message: supportsMfVirtualCamera
-        ? 'Tech Lord Media virtual camera registration is healthy.'
-        : 'Tech Lord Media DirectShow virtual camera fallback is healthy on this Windows build.',
+        ? 'Virtual Presence AI virtual camera registration is healthy.'
+        : 'Virtual Presence AI DirectShow virtual camera fallback is healthy on this Windows build.',
       deviceVisible: visibilityResult.visible
     };
   } else if (!attemptRepair) {
@@ -600,7 +600,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
       success: false,
       error: probeResult.ok
         ? binaryStatus.message
-        : 'Tech Lord Media virtual camera is not registered. Run the installer or surevideotool_cam_registrar install.',
+        : 'Virtual Presence AI virtual camera is not registered. Run the installer or surevideotool_cam_registrar install.',
       deviceVisible: false
     };
   }
@@ -608,7 +608,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   const repairReason = probeResult.ok
     ? binaryStatus.message
     : 'virtual camera probe failed';
-  console.warn(`Tech Lord Media virtual camera ${repairReason}. Attempting automatic registration repair...`);
+  console.warn(`Virtual Presence AI virtual camera ${repairReason}. Attempting automatic registration repair...`);
 
   const installAllUsersResult = runVirtualCameraRegistrar(registrarPath, ['install', '--all-users']);
   if (!installAllUsersResult.ok) {
@@ -617,7 +617,7 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
     if (!installCurrentUserResult.ok) {
       return {
         success: false,
-        error: 'Unable to register Tech Lord Media virtual camera. Please run surevideotool_cam_registrar install as Administrator.',
+        error: 'Unable to register Virtual Presence AI virtual camera. Please run surevideotool_cam_registrar install as Administrator.',
         deviceVisible: false
       };
     }
@@ -627,14 +627,14 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
   if (!reprobeResult.ok) {
     return {
       success: false,
-      error: 'Tech Lord Media virtual camera still failed probe after repair. Please reinstall Tech Lord Media.',
+      error: 'Virtual Presence AI virtual camera still failed probe after repair. Please reinstall Virtual Presence AI.',
       deviceVisible: false
     };
   }
 
   const repairedBinaryStatus = getVirtualCameraStagedBinaryStatus(registrarPath);
   if (repairedBinaryStatus.needsRepair) {
-    const message = `${repairedBinaryStatus.message}. Close WhatsApp and any app using the camera, then run Tech Lord Media again so the updated camera DLL can be staged.`;
+    const message = `${repairedBinaryStatus.message}. Close WhatsApp and any app using the camera, then run Virtual Presence AI again so the updated camera DLL can be staged.`;
     console.error(message);
     appendVirtualCameraLogLine(`[error] ${message}`);
     return {
@@ -646,16 +646,16 @@ function ensureVirtualCameraRegistration({ attemptRepair = false } = {}) {
 
   const visibilityResult = probeWindowsCameraVisibility();
   if (!visibilityResult.visible) {
-    console.warn('Tech Lord Media virtual camera passed registrar probe after repair, but Windows camera visibility check still failed. Continuing because registration is healthy.');
+    console.warn('Virtual Presence AI virtual camera passed registrar probe after repair, but Windows camera visibility check still failed. Continuing because registration is healthy.');
     return {
       success: true,
-      message: 'Tech Lord Media virtual camera registration repaired successfully, but Windows PnP visibility is still delayed or unavailable.',
-      warning: 'Tech Lord Media may not appear in some camera pickers immediately even though the driver probe succeeded.',
+      message: 'Virtual Presence AI virtual camera registration repaired successfully, but Windows PnP visibility is still delayed or unavailable.',
+      warning: 'Virtual Presence AI may not appear in some camera pickers immediately even though the driver probe succeeded.',
       deviceVisible: false
     };
   }
 
-  return { success: true, message: 'Tech Lord Media virtual camera registration repaired successfully.', deviceVisible: true };
+  return { success: true, message: 'Virtual Presence AI virtual camera registration repaired successfully.', deviceVisible: true };
 }
 
 function createVirtualCameraFrameHeader(payloadBytes, timestampHundredsOfNs = getTimestampHundredsOfNs()) {
@@ -1021,7 +1021,7 @@ function loadEnvironmentVariables() {
 function resolveUpdateManifestUrl() {
   return process.env.SUREVIDEOTOOL_UPDATE_MANIFEST_URL
     || process.env.VITE_UPDATE_MANIFEST_URL
-    || 'https://techlordmedia.vercel.app/api/version';
+    || 'https://virtualpresenceai.vercel.app/api/version';
 }
 
 function resolveRendererDevUrl() {
@@ -1037,7 +1037,7 @@ function buildLoadFailureHtml(failedUrl, errorCode, errorDescription) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tech Lord Media Startup Error</title>
+    <title>Virtual Presence AI Startup Error</title>
     <style>
       :root { color-scheme: dark; }
       body {
@@ -1082,7 +1082,7 @@ function buildLoadFailureHtml(failedUrl, errorCode, errorDescription) {
   </head>
   <body>
     <div class="card">
-      <h1>Tech Lord Media could not load the app UI</h1>
+      <h1>Virtual Presence AI could not load the app UI</h1>
       <p>Electron started, but the renderer URL was unavailable.</p>
       <p>URL: <code>${safeUrl}</code></p>
       <p>Error: <code>${errorCode} ${safeDescription}</code></p>

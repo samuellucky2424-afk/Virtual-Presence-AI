@@ -23,7 +23,7 @@ export interface ManifestBuildOptions {
 }
 
 export const GITHUB_OWNER = 'samuellucky2424-afk';
-export const GITHUB_REPO = 'techlordmedia';
+export const GITHUB_REPO = 'Virtual-Presence-AI';
 export const GITHUB_REPOSITORY_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 export const GITHUB_RELEASES_URL = `${GITHUB_REPOSITORY_URL}/releases`;
 
@@ -38,8 +38,8 @@ export function normalizeVersion(version: string): string {
 export function buildAssetName(version: string, packageType: UpdatePackageType): string {
   const safeVersion = normalizeVersion(version);
   return packageType === 'portable'
-    ? `Tech Lord Media ${safeVersion}.exe`
-    : `Tech Lord Media Setup ${safeVersion}.exe`;
+    ? `Virtual Presence AI ${safeVersion}.exe`
+    : `Virtual Presence AI Setup ${safeVersion}.exe`;
 }
 
 export function buildReleasePageUrl(version: string): string {

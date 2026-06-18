@@ -42,9 +42,9 @@ export interface Notification {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const BALANCE_KEY = 'morphly_balance';
-const CREDITS_KEY = 'morphly_credits';
-const TRANSACTIONS_KEY = 'morphly_transactions';
+const BALANCE_KEY = 'vp_balance';
+const CREDITS_KEY = 'vp_credits';
+const TRANSACTIONS_KEY = 'vp_transactions';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();

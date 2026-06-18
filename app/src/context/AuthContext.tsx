@@ -192,8 +192,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             name: name.trim(),
-            app: 'techlordmedia',
-            app_name: 'Tech Lord Media',
+            app: 'virtualpresenceai',
+            app_name: 'Virtual Presence AI',
           },
         },
       });

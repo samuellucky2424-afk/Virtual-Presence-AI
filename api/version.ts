@@ -6,7 +6,7 @@
  */
 
 const GITHUB_OWNER = 'samuellucky2424-afk';
-const GITHUB_REPO = 'techlordmedia';
+const GITHUB_REPO = 'Virtual-Presence-AI';
 const GITHUB_REPOSITORY_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 const GITHUB_API_LATEST = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
 
@@ -14,7 +14,7 @@ async function fetchLatestVersion() {
   const response = await fetch(GITHUB_API_LATEST, {
     headers: {
       'Accept': 'application/vnd.github+json',
-      'User-Agent': 'techlordmedia-updater',
+      'User-Agent': 'virtual-presence-ai-updater',
       'X-GitHub-Api-Version': '2022-11-28',
     },
     cache: 'no-store',
@@ -67,14 +67,14 @@ function buildAssetNameCandidates(version, packageType) {
   const safeVersion = version.trim();
   return packageType === 'portable'
     ? [
-      `Tech Lord Media.${safeVersion}.exe`,
-      `Tech Lord Media ${safeVersion}.exe`,
-      `Tech Lord Media-${safeVersion}.exe`,
+      `Virtual Presence AI.${safeVersion}.exe`,
+      `Virtual Presence AI ${safeVersion}.exe`,
+      `Virtual Presence AI-${safeVersion}.exe`,
     ]
     : [
-      `Tech Lord Media.Setup.${safeVersion}.exe`,
-      `Tech Lord Media Setup ${safeVersion}.exe`,
-      `Tech Lord Media-Setup-${safeVersion}.exe`,
+      `Virtual Presence AI.Setup.${safeVersion}.exe`,
+      `Virtual Presence AI Setup ${safeVersion}.exe`,
+      `Virtual Presence AI-Setup-${safeVersion}.exe`,
     ];
 }
 

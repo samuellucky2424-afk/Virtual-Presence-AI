@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { once } from 'events';
 
-const GITHUB_RELEASES_URL = 'https://github.com/samuellucky2424-afk/techlordmedia/releases';
+const GITHUB_RELEASES_URL = 'https://github.com/samuellucky2424-afk/Virtual-Presence-AI/releases';
 
 function normalizePackageType(value) {
   return value === 'portable' ? 'portable' : 'installer';
@@ -18,14 +18,14 @@ function buildAssetNameCandidates(version, packageType) {
   const safeVersion = typeof version === 'string' ? version.trim() : String(version ?? '').trim();
   return packageType === 'portable'
     ? [
-      `Tech Lord Media.${safeVersion}.exe`,
-      `Tech Lord Media ${safeVersion}.exe`,
-      `Tech Lord Media-${safeVersion}.exe`,
+      `Virtual Presence AI.${safeVersion}.exe`,
+      `Virtual Presence AI ${safeVersion}.exe`,
+      `Virtual Presence AI-${safeVersion}.exe`,
     ]
     : [
-      `Tech Lord Media.Setup.${safeVersion}.exe`,
-      `Tech Lord Media Setup ${safeVersion}.exe`,
-      `Tech Lord Media-Setup-${safeVersion}.exe`,
+      `Virtual Presence AI.Setup.${safeVersion}.exe`,
+      `Virtual Presence AI Setup ${safeVersion}.exe`,
+      `Virtual Presence AI-Setup-${safeVersion}.exe`,
     ];
 }
 
@@ -44,7 +44,7 @@ function findReleaseAsset(assets, version, packageType) {
 
 const DEFAULT_MANIFEST_URL = process.env.SUREVIDEOTOOL_UPDATE_MANIFEST_URL
   || process.env.VITE_UPDATE_MANIFEST_URL
-  || 'https://techlordmedia.vercel.app/api/version';
+  || 'https://virtualpresenceai.vercel.app/api/version';
 
 function safeStringify(value) {
   try {
@@ -122,7 +122,7 @@ function ensureDirectory(dirPath) {
 }
 
 function buildDownloadCachePath(version, assetName) {
-  const safeAssetName = path.basename(assetName || `Tech Lord Media Setup ${version}.exe`);
+  const safeAssetName = path.basename(assetName || `Virtual Presence AI Setup ${version}.exe`);
   return path.join(app.getPath('userData'), 'updates', version, safeAssetName);
 }
 
