@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Coins, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Coins, CreditCard, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { apiFetch, apiFetchWithAuth } from '@/lib/api-client';
+import { apiFetchWithAuth } from '@/lib/api-client';
 import { CREDITS_PER_SECOND } from '@/lib/billing';
 import { DB_TABLES } from '@/lib/dbNames';
 import { formatNaira, resolveStoredPlanPriceNGN } from '@/lib/pricing';
@@ -27,94 +27,86 @@ type SupabasePlan = {
   created_at?: string | null;
 };
 
-type PaystackCheckout = {
-  reference: string;
-  authorizationUrl: string;
-  accessCode?: string;
-  planId?: string;
-  planName?: string;
-  credits?: number;
-  amountNGN?: number;
-};
-
-type PaystackTransactionResponse = {
-  id?: number | string;
-  reference?: string;
-  message?: string;
-};
-
-type PaystackCallbackError = {
-  message?: string;
-};
-
-type PaystackCallbacks = {
-  onLoad?: (response: { id?: number | string; accessCode?: string }) => void;
-  onSuccess?: (response: PaystackTransactionResponse) => void;
-  onCancel?: () => void;
-  onError?: (error: PaystackCallbackError) => void;
-};
-
-type PaystackInstance = {
-  resumeTransaction: (accessCode: string, callbacks?: PaystackCallbacks) => unknown;
-};
-
-type PaystackConstructor = new () => PaystackInstance;
-
 declare global {
   interface Window {
-    PaystackPop?: PaystackConstructor;
+    FlutterwaveCheckout?: (config: FlutterwaveConfig) => void;
   }
 }
 
-const PAYSTACK_INLINE_SCRIPT = 'https://js.paystack.co/v2/inline.js';
-let paystackInlinePromise: Promise<PaystackConstructor> | null = null;
+type FlutterwaveCustomer = {
+  email: string;
+  phone_number?: string;
+  name?: string;
+};
 
-function loadPaystackInline(): Promise<PaystackConstructor> {
+type FlutterwaveCustomizations = {
+  title?: string;
+  description?: string;
+  logo?: string;
+};
+
+type FlutterwaveConfig = {
+  public_key: string;
+  tx_ref: string;
+  amount: number;
+  currency: string;
+  payment_options?: string;
+  meta?: Record<string, any>;
+  customer: FlutterwaveCustomer;
+  callback: (response: any) => void;
+  onclose: () => void;
+  customizations?: FlutterwaveCustomizations;
+};
+
+const FLUTTERWAVE_INLINE_SCRIPT = 'https://checkout.flutterwave.com/v3.js';
+let flutterwaveInlinePromise: Promise<((config: FlutterwaveConfig) => void)> | null = null;
+
+function loadFlutterwaveInline(): Promise<(config: FlutterwaveConfig) => void> {
   if (typeof window === 'undefined') {
-    return Promise.reject(new Error('Paystack checkout is only available in the browser.'));
+    return Promise.reject(new Error('Flutterwave checkout is only available in the browser.'));
   }
 
-  if (window.PaystackPop) {
-    return Promise.resolve(window.PaystackPop);
+  if (window.FlutterwaveCheckout) {
+    return Promise.resolve(window.FlutterwaveCheckout);
   }
 
-  if (paystackInlinePromise) {
-    return paystackInlinePromise;
+  if (flutterwaveInlinePromise) {
+    return flutterwaveInlinePromise;
   }
 
-  paystackInlinePromise = new Promise((resolve, reject) => {
+  flutterwaveInlinePromise = new Promise((resolve, reject) => {
     const resolveWhenReady = () => {
-      if (window.PaystackPop) {
-        resolve(window.PaystackPop);
+      if (window.FlutterwaveCheckout) {
+        resolve(window.FlutterwaveCheckout);
         return;
       }
 
-      paystackInlinePromise = null;
-      reject(new Error('Paystack checkout could not load.'));
+      flutterwaveInlinePromise = null;
+      reject(new Error('Flutterwave checkout could not load.'));
     };
 
-    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${PAYSTACK_INLINE_SCRIPT}"]`);
+    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${FLUTTERWAVE_INLINE_SCRIPT}"]`);
     if (existingScript) {
       existingScript.addEventListener('load', resolveWhenReady, { once: true });
       existingScript.addEventListener('error', () => {
-        paystackInlinePromise = null;
-        reject(new Error('Paystack checkout could not load.'));
+        flutterwaveInlinePromise = null;
+        reject(new Error('Flutterwave checkout could not load.'));
       }, { once: true });
       return;
     }
 
     const script = document.createElement('script');
-    script.src = PAYSTACK_INLINE_SCRIPT;
+    script.src = FLUTTERWAVE_INLINE_SCRIPT;
     script.async = true;
     script.addEventListener('load', resolveWhenReady, { once: true });
     script.addEventListener('error', () => {
-      paystackInlinePromise = null;
-      reject(new Error('Paystack checkout could not load.'));
+      flutterwaveInlinePromise = null;
+      reject(new Error('Flutterwave checkout could not load.'));
     }, { once: true });
     document.head.appendChild(script);
   });
 
-  return paystackInlinePromise;
+  return flutterwaveInlinePromise;
 }
 
 function normalizePlan(plan: SupabasePlan): CreditPlan | null {
@@ -145,11 +137,6 @@ function formatTime(credits: number): string {
   return `~${remainingSeconds}s`;
 }
 
-async function getAccessToken(): Promise<string | null> {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || null;
-}
-
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -160,7 +147,6 @@ function Subscription() {
   const { credits, setCredits } = useApp();
   const [creditPlans, setCreditPlans] = useState<CreditPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<CreditPlan | null>(null);
-  const [checkout, setCheckout] = useState<PaystackCheckout | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
@@ -247,37 +233,60 @@ function Subscription() {
           return;
         }
       } catch (error) {
-        console.warn('Failed to refresh wallet after Paystack payment:', error);
+        console.warn('Failed to refresh wallet after Flutterwave payment:', error);
       }
     }
   }, [setCredits, user?.id]);
 
-  const openPaystackInlineCheckout = useCallback(async (nextCheckout: PaystackCheckout) => {
-    if (!nextCheckout.accessCode) {
-      throw new Error('Paystack checkout access code is missing.');
+  const openFlutterwaveCheckout = useCallback(async (plan: CreditPlan) => {
+    if (!user?.email) {
+      throw new Error('Your user email is missing.');
     }
 
-    const PaystackPop = await loadPaystackInline();
-    const paystack = new PaystackPop();
+    const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
+    if (!publicKey) {
+      throw new Error('Flutterwave public key (VITE_FLUTTERWAVE_PUBLIC_KEY) is not set in the environment.');
+    }
 
-    paystack.resumeTransaction(nextCheckout.accessCode, {
-      onSuccess: () => {
-        void refreshWalletAfterPayment(credits);
+    const FlutterwaveCheckout = await loadFlutterwaveInline();
+    const txRef = `VP-FLW-${user.id}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
+    FlutterwaveCheckout({
+      public_key: publicKey,
+      tx_ref: txRef,
+      amount: plan.priceNGN,
+      currency: 'NGN',
+      payment_options: 'card, banktransfer, ussd',
+      customer: {
+        email: user.email,
+        name: user.name || user.email.split('@')[0] || 'Virtual Presence AI User',
       },
-      onCancel: () => {
-        toast.info('Paystack checkout closed.');
+      meta: {
+        userId: user.id,
+        credits: plan.credits,
       },
-      onError: (error) => {
-        const message = error?.message || 'Paystack checkout could not open.';
-        setPaymentError(message);
-        toast.error(message);
+      callback: (data: any) => {
+        console.log('Flutterwave payment callback data:', data);
+        if (data?.status === 'successful' || data?.status === 'completed') {
+          toast.success('Payment successful! Updating credits...');
+          void refreshWalletAfterPayment(credits);
+        } else {
+          toast.error('Payment was not successful. Status: ' + (data?.status || 'unknown'));
+        }
+      },
+      onclose: () => {
+        toast.info('Flutterwave checkout closed.');
+      },
+      customizations: {
+        title: 'Virtual Presence AI',
+        description: `Recharge wallet with ${plan.credits.toLocaleString()} credits`,
+        logo: 'https://virtual-presence-ai.vercel.app/logo.png',
       },
     });
-  }, [credits, refreshWalletAfterPayment]);
+  }, [user, credits, refreshWalletAfterPayment]);
 
   const handleSelectPlan = (plan: CreditPlan) => {
     setSelectedPlan(plan);
-    setCheckout(null);
     setPaymentError(null);
   };
 
@@ -299,46 +308,10 @@ function Subscription() {
     setPaymentError(null);
 
     try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        throw new Error('Please log in again before starting payment.');
-      }
-
-      const response = await apiFetch('/paystack-initialize', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-          name: user.name || user.email.split('@')[0] || 'Virtual Presence AI User',
-          planId: selectedPlan.id,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || data?.status !== 'success' || !data?.authorizationUrl || !data?.reference) {
-        throw new Error(data?.message || `Paystack returned HTTP ${response.status}`);
-      }
-
-      const nextCheckout: PaystackCheckout = {
-        reference: data.reference,
-        authorizationUrl: data.authorizationUrl,
-        accessCode: data.accessCode,
-        planId: data.planId,
-        planName: data.planName,
-        credits: Number(data.credits || selectedPlan.credits),
-        amountNGN: Number(data.amountNGN || selectedPlan.priceNGN),
-      };
-
-      setCheckout(nextCheckout);
-
-      await openPaystackInlineCheckout(nextCheckout);
+      await openFlutterwaveCheckout(selectedPlan);
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Unable to initialize Paystack payment';
+      const message = error instanceof Error ? error.message : 'Unable to initialize Flutterwave payment';
       setPaymentError(message);
       toast.error(message);
     } finally {
@@ -445,15 +418,15 @@ function Subscription() {
               <CreditCard className="w-5 h-5 text-blue-300" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Paystack checkout</h3>
+              <h3 className="text-sm font-semibold text-white">Flutterwave checkout</h3>
               <p className="text-xs text-[#71717a]">Secure card, transfer, USSD, and bank checkout</p>
             </div>
           </div>
 
           <ul className="text-sm text-[#a1a1aa] space-y-1">
-            <li>- Select a credit plan and complete Paystack checkout inside the app</li>
-            <li>- Complete the payment using any method Paystack shows</li>
-            <li>- Credits are added automatically by the Paystack webhook after payment succeeds</li>
+            <li>- Select a credit plan and complete Flutterwave checkout inside the app</li>
+            <li>- Complete the payment using any method Flutterwave shows</li>
+            <li>- Credits are added automatically by the Flutterwave webhook after payment succeeds</li>
           </ul>
 
           {user?.email && (
@@ -474,21 +447,8 @@ function Subscription() {
               className="bg-blue-600 hover:bg-blue-500 text-white font-medium"
             >
               {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-              Pay with Paystack
+              Pay with Flutterwave
             </Button>
-
-            {checkout?.authorizationUrl && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => window.open(checkout.authorizationUrl, '_blank', 'noopener,noreferrer')}
-                className="border-[#3f3f46] bg-transparent text-white hover:bg-[#1a1a1f]"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open Hosted Checkout
-              </Button>
-            )}
-
           </div>
         </div>
 
@@ -516,7 +476,7 @@ function Subscription() {
                 {isProcessing ? (
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                 ) : (
-                  'Pay with Paystack'
+                  'Pay with Flutterwave'
                 )}
                 {!isProcessing && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>

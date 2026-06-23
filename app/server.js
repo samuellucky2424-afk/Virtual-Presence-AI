@@ -13,6 +13,7 @@ import rateRouter from './api/rate.ts';
 import walletRouter from './api/wallet.ts';
 import paystackInitializeRouter from './api/paystack-initialize.ts';
 import paystackWebhookRouter from './api/paystack-webhook.ts';
+import flutterwaveWebhookRouter from './api/flutterwave-webhook.ts';
 import startSessionRouter from './api/start-session.ts';
 import sessionStatusRouter from './api/session-status.ts';
 import endSessionRouter from './api/end-session.ts';
@@ -58,6 +59,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/api/paystack-webhook', express.raw({ type: '*/*' }), paystackWebhookRouter);
+app.use('/api/flutterwave-webhook', express.raw({ type: '*/*' }), flutterwaveWebhookRouter);
 app.use(express.json());
 
 // API Routes
