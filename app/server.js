@@ -19,6 +19,7 @@ import sessionStatusRouter from './api/session-status.ts';
 import endSessionRouter from './api/end-session.ts';
 import versionRouter from './api/version.ts';
 import adminStatusRouter from './api/admin-status.ts';
+import publicConfigRouter from './api/public-config.ts';
 import { supabaseAdminConfigError } from './api/supabase.ts';
 import { logError, logRequest } from '../shared/server-logger.js';
 
@@ -71,6 +72,7 @@ app.use('/api/session-status', sessionStatusRouter);
 app.use('/api/end-session', endSessionRouter);
 app.use('/api/version', versionRouter);
 app.use('/api/admin-status', adminStatusRouter);
+app.use('/api/public-config', publicConfigRouter);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

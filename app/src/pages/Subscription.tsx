@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { useAuth } from '@/context/AuthContext';
-import { apiFetchWithAuth } from '@/lib/api-client';
+import { apiFetch, apiFetchWithAuth } from '@/lib/api-client';
 import { CREDITS_PER_SECOND } from '@/lib/billing';
 import { DB_TABLES } from '@/lib/dbNames';
 import { formatNaira, resolveStoredPlanPriceNGN } from '@/lib/pricing';
@@ -59,7 +59,34 @@ type FlutterwaveConfig = {
 };
 
 const FLUTTERWAVE_INLINE_SCRIPT = 'https://checkout.flutterwave.com/v3.js';
+const DEFAULT_FLUTTERWAVE_PUBLIC_KEY = 'FLWPUBK-1c33f3767f57fa6306dfaf7c3792a724-X';
 let flutterwaveInlinePromise: Promise<((config: FlutterwaveConfig) => void)> | null = null;
+
+type PublicConfigResponse = {
+  flutterwavePublicKey?: string | null;
+};
+
+function isConfiguredPublicKey(value?: string | null): value is string {
+  const trimmed = value?.trim();
+  return Boolean(trimmed && !trimmed.startsWith('your_') && !trimmed.startsWith('YOUR_'));
+}
+
+async function resolveFlutterwavePublicKey(): Promise<string> {
+  const envPublicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
+  if (isConfiguredPublicKey(envPublicKey)) {
+    return envPublicKey.trim();
+  }
+
+  const response = await apiFetch('/public-config');
+  if (response.ok) {
+    const config = await response.json().catch(() => null) as PublicConfigResponse | null;
+    if (isConfiguredPublicKey(config?.flutterwavePublicKey)) {
+      return config.flutterwavePublicKey.trim();
+    }
+  }
+
+  return DEFAULT_FLUTTERWAVE_PUBLIC_KEY;
+}
 
 function loadFlutterwaveInline(): Promise<(config: FlutterwaveConfig) => void> {
   if (typeof window === 'undefined') {
@@ -243,11 +270,7 @@ function Subscription() {
       throw new Error('Your user email is missing.');
     }
 
-    const publicKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
-    if (!publicKey) {
-      throw new Error('Flutterwave public key (VITE_FLUTTERWAVE_PUBLIC_KEY) is not set in the environment.');
-    }
-
+    const publicKey = await resolveFlutterwavePublicKey();
     const FlutterwaveCheckout = await loadFlutterwaveInline();
     const txRef = `VP-FLW-${user.id}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 

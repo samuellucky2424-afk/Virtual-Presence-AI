@@ -29,6 +29,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+type AdminLookupResult = {
+  user_id?: string | null;
+  email?: string | null;
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Backend-enforced admin check via Supabase RPC.
   // The DB function reads the clone admins table for
   // the currently authenticated user — the client cannot forge this result.
-  const checkAdmin = useCallback(async (expectedUserId?: string, accessToken?: string): Promise<boolean> => {
+  const checkAdmin = useCallback(async (
+    expectedUserId?: string,
+    accessToken?: string,
+    expectedEmail?: string | null,
+  ): Promise<boolean> => {
     try {
       const { data, error: rpcError } = await supabase.rpc(DB_RPC.isCurrentUserAdmin);
       if (!rpcError && Boolean(data)) {
@@ -65,29 +74,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      const { data: adminRow, error: adminError } = await supabase
-        .from(DB_TABLES.admins)
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (adminError) {
-        console.warn(`[auth] ${DB_TABLES.admins} fallback admin check failed:`, adminError.message);
-      } else if (adminRow?.user_id) {
+      const { data: explicitRpcData, error: explicitRpcError } = await supabase.rpc(DB_RPC.isAdmin, {
+        p_user: userId,
+      });
+      if (!explicitRpcError && Boolean(explicitRpcData)) {
         return true;
       }
 
-      const userEmail = session?.user?.email;
+      if (explicitRpcError) {
+        console.warn(`[auth] ${DB_RPC.isAdmin} RPC error:`, explicitRpcError.message);
+      }
+
+      const { data: adminRows, error: adminError } = await supabase
+        .from(DB_TABLES.admins)
+        .select('user_id,email')
+        .eq('user_id', userId)
+        .limit(1);
+
+      if (adminError) {
+        console.warn(`[auth] ${DB_TABLES.admins} fallback admin check failed:`, adminError.message);
+      } else if ((adminRows as AdminLookupResult[] | null)?.some((row) => row?.user_id)) {
+        return true;
+      }
+
+      const userEmail = (expectedEmail || session?.user?.email || '').trim();
       if (userEmail) {
-        const { data: adminEmailRow, error: adminEmailError } = await supabase
+        const { data: adminEmailRows, error: adminEmailError } = await supabase
           .from(DB_TABLES.admins)
-          .select('user_id')
+          .select('user_id,email')
           .ilike('email', userEmail)
-          .maybeSingle();
+          .limit(1);
 
         if (adminEmailError) {
           console.warn(`[auth] ${DB_TABLES.admins} email fallback admin check failed:`, adminEmailError.message);
-        } else if (adminEmailRow?.user_id) {
+        } else if ((adminEmailRows as AdminLookupResult[] | null)?.some((row) => row?.user_id)) {
           return true;
         }
       }
@@ -124,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         setUser(formatUser(session.user));
         setAdminLoading(true);
-        const admin = await checkAdmin(session.user.id, (session as any).access_token);
+        const admin = await checkAdmin(session.user.id, (session as any).access_token, session.user.email);
         if (!mounted) return;
         setIsAdmin(admin);
         setAdminLoading(false);
@@ -166,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setAdminLoading(true);
-      const admin = await checkAdmin(signedInUser?.id, data.session?.access_token);
+      const admin = await checkAdmin(signedInUser?.id, data.session?.access_token, signedInUser?.email);
       setIsAdmin(admin);
       setAdminLoading(false);
 

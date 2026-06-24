@@ -1,20 +1,5 @@
 // @ts-nocheck
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-
-const supabaseAdminConfigError = !supabaseUrl
-  ? 'Missing SUPABASE_URL or VITE_SUPABASE_URL'
-  : !supabaseServiceKey
-    ? 'Missing SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_KEY'
-    : null;
-
-const supabaseAdmin = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
-  : null;
+import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
 
 function getBearerToken(req) {
   const header = req.headers.authorization || req.headers.Authorization || '';
@@ -52,29 +37,31 @@ export default async function handler(req, res) {
     }
 
     const user = authData.user;
-    const { data: adminRow, error: adminError } = await supabaseAdmin
-      .from('kadmins')
+    const { data: adminRows, error: adminError } = await supabaseAdmin
+      .from('admins_vp')
       .select('user_id,email')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .limit(1);
 
     if (adminError) {
       console.error('[api/admin-status] admin lookup failed:', adminError);
       return res.status(500).json({ isAdmin: false, error: adminError.message || 'admin lookup failed' });
     }
 
+    const adminRow = adminRows?.[0] || null;
     if (!adminRow?.user_id && user.email) {
-      const { data: adminEmailRow, error: adminEmailError } = await supabaseAdmin
-        .from('kadmins')
+      const { data: adminEmailRows, error: adminEmailError } = await supabaseAdmin
+        .from('admins_vp')
         .select('user_id,email')
         .ilike('email', user.email)
-        .maybeSingle();
+        .limit(1);
 
       if (adminEmailError) {
         console.error('[api/admin-status] admin email lookup failed:', adminEmailError);
         return res.status(500).json({ isAdmin: false, error: adminEmailError.message || 'admin email lookup failed' });
       }
 
+      const adminEmailRow = adminEmailRows?.[0] || null;
       if (adminEmailRow?.user_id) {
         return res.json({
           isAdmin: true,

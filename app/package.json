@@ -1,7 +1,7 @@
 {
   "name": "virtual-presence-ai-desktop",
   "private": true,
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Virtual Presence AI desktop app.",
   "author": "Virtual Presence AI",
   "repository": {
@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
     "dev:web": "vite --host 127.0.0.1 --port 5173 --strictPort",
-    "dev:api": "npx kill-port 3000 && tsx server.js",
+    "dev:api": "node scripts/free-port.cjs 3000 && tsx server.js",
     "dev:full": "npm run dev",
     "build": "npm run build:app",
     "build:app": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc -b && vite build",
@@ -23,9 +23,10 @@
     "electron:dev:wait": "wait-on tcp:127.0.0.1:3000 tcp:127.0.0.1:5173 && electron .",
     "clean:build": "node scripts/clean-build.cjs",
     "icons": "node scripts/generate-icons.cjs",
-    "electron:build": "npm run icons && npm run clean:build && npm run build:app && electron-builder --win --publish never",
-    "electron:build:dir": "npm run icons && npm run clean:build && npm run build:app && electron-builder --win dir",
-    "electron:release": "npm run icons && npm run clean:build && npm run build:app && electron-builder --win --publish always"
+    "native:build": "node scripts/build-native-camera.cjs",
+    "electron:build": "npm run icons && npm run clean:build && npm run native:build && npm run build:app && electron-builder --win --publish never",
+    "electron:build:dir": "npm run icons && npm run clean:build && npm run native:build && npm run build:app && electron-builder --win dir",
+    "electron:release": "npm run icons && npm run clean:build && npm run native:build && npm run build:app && electron-builder --win --publish always"
   },
   "build": {
     "appId": "com.virtualpresenceai.app",

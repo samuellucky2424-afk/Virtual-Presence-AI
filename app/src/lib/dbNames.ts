@@ -12,6 +12,7 @@ export const DB_TABLES = {
 } as const;
 
 export const DB_RPC = {
+  isAdmin: 'is_admin_vp',
   isCurrentUserAdmin: 'is_current_user_admin_vp',
   adminListUsers: 'admin_list_users_vp',
   adminSetCredits: 'admin_set_credits_vp',
