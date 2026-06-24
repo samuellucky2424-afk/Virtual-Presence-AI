@@ -349,6 +349,7 @@ DECLARE
     v_admin   UUID := auth.uid();
     v_current INTEGER;
     v_delta   INTEGER;
+    v_wallet  UUID;
 BEGIN
     IF NOT public.is_admin_vp(v_admin) THEN
         RAISE EXCEPTION 'Not authorized';
@@ -369,10 +370,38 @@ BEGIN
 
     UPDATE public.wallets_vp
        SET credits = p_credits
-     WHERE user_id = p_user_id;
+     WHERE user_id = p_user_id
+     RETURNING id INTO v_wallet;
 
     INSERT INTO public.credit_adjustments_vp (user_id, admin_id, delta, new_balance, reason)
     VALUES (p_user_id, v_admin, v_delta, p_credits, p_reason);
+
+    IF v_delta <> 0 THEN
+        INSERT INTO public.transactions_vp (
+            user_id,
+            wallet_id,
+            type,
+            amount_naira,
+            amount,
+            credits,
+            reference,
+            description,
+            status,
+            metadata
+        )
+        VALUES (
+            p_user_id,
+            v_wallet,
+            CASE WHEN v_delta < 0 THEN 'debit' ELSE 'credit' END,
+            0,
+            0,
+            ABS(v_delta),
+            'ADMIN-' || uuid_generate_v4()::TEXT,
+            COALESCE(NULLIF(p_reason, ''), 'Admin wallet adjustment'),
+            'success',
+            jsonb_build_object('admin_id', v_admin, 'delta', v_delta, 'new_balance', p_credits)
+        );
+    END IF;
 
     INSERT INTO public.audit_log_vp (actor_id, action, target_table, target_id, payload)
     VALUES (

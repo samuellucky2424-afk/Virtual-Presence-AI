@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { apiFetchWithAuth } from '@/lib/api-client';
+import { DB_TABLES } from '@/lib/dbNames';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 
 export interface Transaction {
@@ -46,6 +48,20 @@ const BALANCE_KEY = 'vp_balance';
 const CREDITS_KEY = 'vp_credits';
 const TRANSACTIONS_KEY = 'vp_transactions';
 
+function mapWalletTransaction(tx: any): Transaction {
+  const rawCredits = Number(tx?.credits || 0);
+  const isDebit = tx?.type === 'debit' || tx?.type === 'usage' || rawCredits < 0;
+
+  return {
+    id: tx.id,
+    type: isDebit ? 'debit' : 'credit',
+    amount: Number(tx.amount ?? tx.amount_naira ?? 0),
+    credits: Math.abs(rawCredits),
+    description: tx.description || (isDebit ? 'Session usage' : 'Credits added'),
+    timestamp: tx.created_at,
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [balance, setBalanceState] = useState(0);
@@ -64,6 +80,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(CREDITS_KEY);
       localStorage.removeItem(TRANSACTIONS_KEY);
       return;
+    }
+
+    try {
+      const [walletResult, transactionsResult] = await Promise.all([
+        supabase
+          .from(DB_TABLES.wallets)
+          .select('credits')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from(DB_TABLES.transactions)
+          .select('id,type,amount,amount_naira,credits,description,created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ]);
+
+      if (walletResult.error) {
+        throw walletResult.error;
+      }
+
+      const nextCredits = Number(walletResult.data?.credits ?? 0);
+      if (sessionStatus !== 'LIVE') {
+        setCreditsState(nextCredits);
+        localStorage.setItem(CREDITS_KEY, String(nextCredits));
+      }
+
+      if (transactionsResult.error) {
+        console.warn('Failed to sync wallet transactions directly:', transactionsResult.error);
+      } else {
+        const nextTransactions = (transactionsResult.data || []).map(mapWalletTransaction);
+        setTransactions(nextTransactions);
+        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(nextTransactions));
+      }
+
+      setBalanceState(0);
+      localStorage.setItem(BALANCE_KEY, '0');
+      return;
+    } catch (directError) {
+      console.warn('Direct wallet sync failed; falling back to API:', directError);
     }
 
     try {
@@ -99,7 +155,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(CREDITS_KEY, String(data.credits));
       }
 
-      const nextTransactions = Array.isArray(data?.transactions) ? data.transactions : [];
+      const nextTransactions = Array.isArray(data?.transactions)
+        ? data.transactions.map(mapWalletTransaction)
+        : [];
       setTransactions(nextTransactions);
       localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(nextTransactions));
     } catch (err) {
@@ -110,6 +168,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void syncWallet();
   }, [syncWallet]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+
+    const refreshWallet = () => {
+      void syncWallet();
+    };
+
+    const channel = supabase
+      .channel(`vp-wallet-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: DB_TABLES.wallets,
+        filter: `user_id=eq.${user.id}`,
+      }, refreshWallet)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: DB_TABLES.transactions,
+        filter: `user_id=eq.${user.id}`,
+      }, refreshWallet)
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [syncWallet, user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
