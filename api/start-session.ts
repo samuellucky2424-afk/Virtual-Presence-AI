@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { createDecartClient } from '@decartai/sdk';
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
 import { requireSupabaseUser } from './paystack.js';
 
@@ -43,6 +42,45 @@ async function logPaymentActivity(supabaseAdmin, {
 
 function getDecartApiKey() {
   return process.env.DECART_API_KEY?.trim() || null;
+}
+
+function getDecartApiBaseUrl() {
+  return (process.env.DECART_API_BASE_URL || 'https://api.decart.ai').replace(/\/+$/, '');
+}
+
+async function createDecartClientToken(decartApiKey, { userId, maxSeconds }) {
+  const response = await fetch(`${getDecartApiBaseUrl()}/v1/client/tokens`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-KEY': decartApiKey,
+    },
+    body: JSON.stringify({
+      expiresIn: Math.max(60, maxSeconds),
+      allowedModels: [DECART_REALTIME_MODEL],
+      constraints: {
+        realtime: {
+          maxSessionDuration: maxSeconds,
+        },
+      },
+      metadata: {
+        userId,
+        purpose: 'virtual-presence-realtime',
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Decart token request failed with HTTP ${response.status}${errorText ? `: ${errorText}` : ''}`);
+  }
+
+  const token = await response.json();
+  if (!token?.apiKey) {
+    throw new Error('Decart did not return a client token');
+  }
+
+  return token;
 }
 
 function normalizeCredits(value) {
@@ -236,24 +274,7 @@ export default async function handler(req, res) {
 
     let decartToken;
     try {
-      const decartClient = createDecartClient({ apiKey: decartApiKey });
-      decartToken = await decartClient.tokens.create({
-        expiresIn: Math.max(60, maxSeconds),
-        allowedModels: [DECART_REALTIME_MODEL],
-        constraints: {
-          realtime: {
-            maxSessionDuration: maxSeconds,
-          },
-        },
-        metadata: {
-          userId,
-          purpose: 'virtual-presence-realtime',
-        },
-      });
-
-      if (!decartToken?.apiKey) {
-        throw new Error('Decart did not return a client token');
-      }
+      decartToken = await createDecartClientToken(decartApiKey, { userId, maxSeconds });
     } catch (error) {
       console.error('Failed to create Decart client token:', error);
       await logPaymentActivity(supabaseAdmin, {
