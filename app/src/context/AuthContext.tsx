@@ -34,6 +34,12 @@ type AdminLookupResult = {
   email?: string | null;
 };
 
+function isNetworkFetchError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const message = 'message' in error ? String((error as { message?: unknown }).message ?? '') : '';
+  return /failed to fetch|fetch failed|networkerror|network error/i.test(message);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,8 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn(`[auth] ${DB_RPC.isCurrentUserAdmin} RPC error:`, rpcError.message);
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = expectedUserId || session?.user?.id;
+      let currentSession: any = null;
+      let userId = expectedUserId;
+      let userEmail = (expectedEmail || '').trim();
+      let bearerToken = accessToken;
+
+      if (!userId || !userEmail || !bearerToken) {
+        const { data: { session } } = await supabase.auth.getSession();
+        currentSession = session;
+        userId = userId || session?.user?.id;
+        userEmail = userEmail || (session?.user?.email || '').trim();
+        bearerToken = bearerToken || session?.access_token;
+      }
+
       if (!userId) {
         return false;
       }
@@ -97,7 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      const userEmail = (expectedEmail || session?.user?.email || '').trim();
       if (userEmail) {
         const { data: adminEmailRows, error: adminEmailError } = await supabase
           .from(DB_TABLES.admins)
@@ -112,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const bearerToken = accessToken || session?.access_token;
+      bearerToken = bearerToken || currentSession?.access_token;
       if (bearerToken) {
         const response = await apiFetch('/admin-status', {
           headers: {
@@ -138,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let authStateTimer: ReturnType<typeof setTimeout> | null = null;
 
     const applySession = async (session: { user: SupabaseUser } | null) => {
       if (session?.user) {
@@ -162,11 +179,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void applySession(session as any);
+      if (authStateTimer) clearTimeout(authStateTimer);
+      authStateTimer = setTimeout(() => {
+        void applySession(session as any);
+      }, 0);
     });
 
     return () => {
       mounted = false;
+      if (authStateTimer) clearTimeout(authStateTimer);
       subscription.unsubscribe();
     };
   }, [checkAdmin]);
@@ -192,7 +213,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       navigate(admin ? ROUTES.PROTECTED.ADMIN : ROUTES.DEFAULT, { replace: true });
     } catch (err: any) {
-      const message = err.message || 'Login failed';
+      const message = isNetworkFetchError(err)
+        ? 'Unable to reach the authentication backend. Check your internet connection and try again.'
+        : err.message || 'Login failed';
       setError(message);
       throw err;
     } finally {
