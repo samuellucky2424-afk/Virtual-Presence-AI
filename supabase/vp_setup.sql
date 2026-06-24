@@ -617,6 +617,39 @@ ON CONFLICT (from_currency, to_currency) DO UPDATE
 SET rate = EXCLUDED.rate,
     updated_at = NOW();
 
+-- =============================================================================
+-- 6. ADMIN BACKFILL
+-- =============================================================================
+-- If this database previously used the legacy admins/kadmins tables, copy those
+-- admin users into the active Virtual Presence AI admin table.
+
+DO $$
+BEGIN
+    IF to_regclass('public.admins') IS NOT NULL THEN
+        EXECUTE $sql$
+            INSERT INTO public.admins_vp (user_id, email)
+            SELECT user_id, email
+              FROM public.admins
+             WHERE user_id IS NOT NULL
+               AND email IS NOT NULL
+            ON CONFLICT (user_id) DO UPDATE
+            SET email = EXCLUDED.email
+        $sql$;
+    END IF;
+
+    IF to_regclass('public.kadmins') IS NOT NULL THEN
+        EXECUTE $sql$
+            INSERT INTO public.admins_vp (user_id, email)
+            SELECT user_id, email
+              FROM public.kadmins
+             WHERE user_id IS NOT NULL
+               AND email IS NOT NULL
+            ON CONFLICT (user_id) DO UPDATE
+            SET email = EXCLUDED.email
+        $sql$;
+    END IF;
+END $$;
+
 -- Enable Realtime for standard tables
 DO $$
 DECLARE
