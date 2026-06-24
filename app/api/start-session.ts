@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { createDecartClient } from '@decartai/sdk';
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
 import { logPaymentActivity } from '../../shared/payment-activity-log.js';
 import { requireSupabaseUser } from '../../shared/paystack-payment.js';
@@ -6,6 +7,8 @@ import { requireSupabaseUser } from '../../shared/paystack-payment.js';
 const CREDITS_PER_SECOND = 2;
 const MAX_BILLABLE_SECONDS = 7200;
 const SESSION_BILLING_GRACE_SECONDS = 20;
+const DECART_REALTIME_MODEL = 'lucy-2.1';
+const MAX_DECART_SESSION_SECONDS = 3600;
 
 function getDecartApiKey() {
   return process.env.DECART_API_KEY?.trim() || null;
@@ -193,8 +196,48 @@ export default async function handler(req, res) {
       return res.json({ allowed: false, error: 'Insufficient credits' });
     }
 
-    // Expose a deterministic time budget to the client based on current credits.
-    const maxSeconds = Math.floor(userCredits / CREDITS_PER_SECOND) + SESSION_BILLING_GRACE_SECONDS;
+    // Decart client tokens have a maximum one-hour lifetime. Keep the
+    // application time budget aligned so a valid session never outlives it.
+    const maxSeconds = Math.min(
+      Math.floor(userCredits / CREDITS_PER_SECOND) + SESSION_BILLING_GRACE_SECONDS,
+      MAX_DECART_SESSION_SECONDS,
+    );
+
+    let decartToken;
+    try {
+      const decartClient = createDecartClient({ apiKey: decartApiKey });
+      decartToken = await decartClient.tokens.create({
+        expiresIn: Math.max(60, maxSeconds),
+        allowedModels: [DECART_REALTIME_MODEL],
+        constraints: {
+          realtime: {
+            maxSessionDuration: maxSeconds,
+          },
+        },
+        metadata: {
+          userId,
+          purpose: 'virtual-presence-realtime',
+        },
+      });
+
+      if (!decartToken?.apiKey) {
+        throw new Error('Decart did not return a client token');
+      }
+    } catch (error) {
+      console.error('Failed to create Decart client token:', error);
+      await logPaymentActivity(supabaseAdmin, {
+        event: 'decart_token_create_failed',
+        severity: 'error',
+        userId,
+        targetId: userId,
+        message: error?.message || 'Failed to create Decart client token',
+        payload: { model: DECART_REALTIME_MODEL },
+      });
+      return res.status(503).json({
+        allowed: false,
+        error: 'Unable to initialize Decart. Verify DECART_API_KEY and Decart account access.',
+      });
+    }
 
     const { data: newSession, error: sessionError } = await supabaseAdmin
       .from('sessions')
@@ -226,7 +269,14 @@ export default async function handler(req, res) {
       payload: { sessionId: newSession.id, credits: userCredits, maxSeconds },
     });
 
-    res.json({ allowed: true, sessionId: newSession.id, credits: userCredits, maxSeconds, token: decartApiKey });
+    res.json({
+      allowed: true,
+      sessionId: newSession.id,
+      credits: userCredits,
+      maxSeconds,
+      token: decartToken.apiKey,
+      tokenExpiresAt: decartToken.expiresAt,
+    });
   } catch (error) {
     console.error('start-session unexpected error:', error);
     await logPaymentActivity(supabaseAdmin, {

@@ -226,6 +226,17 @@ function getStartSessionErrorToast(error: unknown): string | null {
     return 'Failed to start session';
   }
 
+  const message = error.message || '';
+  const normalizedMessage = message.toLowerCase();
+
+  if (
+    normalizedMessage.includes('failed to fetch')
+    || normalizedMessage.includes('networkerror')
+    || normalizedMessage.includes('network request failed')
+  ) {
+    return 'Unable to reach the Virtual Presence AI server. Check your internet connection and try again.';
+  }
+
   switch (error.message) {
     case 'Webcam start failed':
     case 'Decart connection was not established':
@@ -238,34 +249,59 @@ function getStartSessionErrorToast(error: unknown): string | null {
 }
 
 function getDecartSdkErrorMessage(error: unknown): string | null {
-  if (error instanceof Error && error.message) {
-    return error.message;
+  const candidate = error as {
+    message?: unknown;
+    code?: unknown;
+    cause?: { message?: unknown } | unknown;
+  } | null;
+  const directMessage = error instanceof Error && error.message
+    ? error.message
+    : typeof candidate?.message === 'string'
+      ? candidate.message
+      : '';
+  const causeMessage = (
+    typeof candidate?.cause === 'object'
+    && candidate.cause !== null
+    && 'message' in candidate.cause
+    && typeof candidate.cause.message === 'string'
+  )
+    ? candidate.cause.message
+    : '';
+  const code = typeof candidate?.code === 'string' ? candidate.code : '';
+  const details = `${directMessage} ${causeMessage} ${code}`.toLowerCase();
+
+  if (
+    details.includes('invalid_api_key')
+    || details.includes('unauthorized')
+    || details.includes('forbidden')
+  ) {
+    return 'The Decart session token was rejected. Check the server DECART_API_KEY and Decart account access.';
   }
 
-  if (typeof error === 'object' && error !== null) {
-    const candidate = error as {
-      message?: unknown;
-      code?: unknown;
-      cause?: { message?: unknown } | unknown;
-    };
+  if (details.includes('webrtc_ice_error')) {
+    return 'Decart could not establish a media connection. Check your firewall, VPN, or network restrictions.';
+  }
 
-    if (typeof candidate.message === 'string' && candidate.message) {
-      return candidate.message;
-    }
+  if (
+    details.includes('webrtc_websocket_error')
+    || details.includes('webrtc_timeout_error')
+    || details.includes('failed to fetch')
+    || details.includes('networkerror')
+    || details.includes('websocket')
+  ) {
+    return 'Cannot reach Decart realtime. Check your internet, DNS, firewall, or VPN and allow wss://api3.decart.ai.';
+  }
 
-    if (
-      typeof candidate.cause === 'object'
-      && candidate.cause !== null
-      && 'message' in candidate.cause
-      && typeof candidate.cause.message === 'string'
-      && candidate.cause.message
-    ) {
-      return candidate.cause.message;
-    }
+  if (directMessage) {
+    return directMessage;
+  }
 
-    if (typeof candidate.code === 'string' && candidate.code) {
-      return candidate.code;
-    }
+  if (causeMessage) {
+    return causeMessage;
+  }
+
+  if (code) {
+    return code;
   }
 
   return null;
