@@ -3,6 +3,8 @@
 .push-fix
 app/node_modules
 app/release
+app/release-*
+app/electron-build-*.log
 app/dist
 app/logs
 app/.env

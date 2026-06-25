@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { supabaseAdmin, supabaseAdminConfigError } from './supabase.js';
-import { requireSupabaseUser } from '../shared/paystack-payment.js';
+import { requireSupabaseUser } from './auth.js';
 
 const CREDITS_PER_SECOND = 2;
 const MAX_BILLABLE_SECONDS = 7200;

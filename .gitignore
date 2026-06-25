@@ -48,3 +48,4 @@ scripts/monitor-morphly.ps1
 
 .vercel
 .env*.local
+.env*
