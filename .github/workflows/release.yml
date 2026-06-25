@@ -155,10 +155,14 @@ jobs:
         if (!$blockmaps) { throw "Missing .blockmap files in $dir" }
 
         $installerCandidates = @(
+          (Join-Path $dir "Virtual Presence AI Setup $version.exe"),
+          (Join-Path $dir "Virtual-Presence-AI-Setup-$version.exe"),
           (Join-Path $dir "Tech Lord Media Setup $version.exe"),
           (Join-Path $dir "Tech-Lord-Media-Setup-$version.exe")
         )
         $portableCandidates = @(
+          (Join-Path $dir "Virtual Presence AI $version.exe"),
+          (Join-Path $dir "Virtual-Presence-AI-$version.exe"),
           (Join-Path $dir "Tech Lord Media $version.exe"),
           (Join-Path $dir "Tech-Lord-Media-$version.exe")
         )

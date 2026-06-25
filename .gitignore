@@ -22,6 +22,8 @@ release/
 
 # Electron build artifacts
 app/release/
+app/release-*/
+app/electron-build-*.log
 .push-fix/app/release/
 app/release-camera-test*/
 app/.cache/
