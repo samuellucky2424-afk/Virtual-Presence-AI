@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
 
-const DEPLOYED_APP_ORIGIN = 'https://virtual-presence-ai.vercel.app';
 const LOCAL_API_BASE = '/api';
 
 function normalizeApiBase(value?: string | null): string | null {
@@ -18,11 +17,10 @@ function isFileProtocol(): boolean {
 
 function getApiBase(): string {
   const configuredBase = normalizeApiBase(import.meta.env.VITE_API_URL);
-  const deployedBase = `${DEPLOYED_APP_ORIGIN}/api`;
 
   if (configuredBase) {
     if (configuredBase.startsWith('/') && isFileProtocol()) {
-      return deployedBase;
+      throw new Error('VITE_API_URL must be an absolute URL for packaged desktop builds.');
     }
 
     return configuredBase;
@@ -32,7 +30,11 @@ function getApiBase(): string {
     return LOCAL_API_BASE;
   }
 
-  return deployedBase;
+  if (!isFileProtocol()) {
+    return LOCAL_API_BASE;
+  }
+
+  throw new Error('Missing VITE_API_URL for packaged desktop build.');
 }
 
 function withLeadingSlash(path: string): string {
